@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Database Query') }}{% endblock %}
+{% block content %}
+<div class="max-w-4xl mx-auto">
+  <div class="text-center mb-10">
+    <div class="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-sm">
+      <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+    </div>
+    <h1 class="text-3xl font-bold text-slate-900 mb-3 tracking-tight">{{ _('Natural Language Query') }}</h1>
+    <p class="text-slate-500 font-medium max-w-lg mx-auto">
+      {{ _('Extract intelligence directly from the secure local database using plain text questions. No data leaves the server.') }}
+    </p>
+  </div>
+
+  <form method="post" class="relative group">
+    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+      <svg class="w-6 h-6 text-slate-400 group-focus-within:text-blue-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16l2.879-2.879m0 0a3 3 0 104.243-4.242 3 3 0 00-4.243 4.242zM21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+    </div>
+    <input name="question" value="{{ question }}" autofocus autocomplete="off"
+           placeholder="{{ _('e.g. How many PSIs are stationed at Sanand? Or list all cyber officers.') }}"
+           class="w-full pl-14 pr-32 py-5 bg-white border border-slate-200 rounded-2xl shadow-sm text-lg font-medium text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all">
+    <div class="absolute inset-y-2 right-2">
+      <button class="btn h-full px-8 rounded-xl font-bold tracking-wide shadow-sm" type="submit">{{ _('Execute') }}</button>
+    </div>
+  </form>
+
+  {% if answer %}
+    <div class="mt-10 animate-fade-in-up">
+    {% if not answer.ok %}
+      <div class="card p-6 bg-red-50 border-red-100 flex items-start space-x-4">
+        <div class="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center shrink-0 mt-0.5">
+          <svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+        </div>
+        <div>
+          <h3 class="text-red-800 font-bold mb-1">{{ _('Query Rejected') }}</h3>
+          <p class="text-red-700 text-sm font-medium leading-relaxed">{{ answer.message }}</p>
+        </div>
+      </div>
+    {% else %}
+      <div class="card overflow-hidden border border-slate-200">
+        <div class="bg-slate-50 border-b border-slate-200 p-5 flex justify-between items-center">
+          <div class="flex items-center space-x-3">
+            <div class="w-8 h-8 rounded bg-blue-100 flex items-center justify-center text-blue-600">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+            </div>
+            <div class="font-bold text-slate-800">{{ answer.interpretation }}</div>
+          </div>
+          <div class="flex items-center space-x-2">
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{{ _('Template Executed') }}</span>
+            <span class="bg-white border border-slate-200 text-slate-600 text-xs font-mono px-2 py-1 rounded shadow-sm">{{ answer.sql_label }}</span>
+          </div>
+        </div>
+        
+        <div class="p-0 overflow-x-auto">
+          {% if answer.rows %}
+          <table class="w-full text-left text-sm whitespace-nowrap">
+            <thead class="bg-white">
+              <tr>{% for c in answer.columns %}<th class="px-6 py-4 font-bold text-slate-500 uppercase tracking-wider text-xs border-b border-slate-200">{{ c }}</th>{% endfor %}</tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+              {% for row in answer.rows %}
+              <tr class="hover:bg-slate-50/80 transition-colors">
+                {% for c in answer.columns %}
+                <td class="px-6 py-3.5 text-slate-700 font-medium">
+                  {{ row[c] if row[c] is not none else '<span class="text-slate-300">—</span>'|safe }}
+                </td>
+                {% endfor %}
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          <div class="bg-slate-50 p-3 px-6 border-t border-slate-200 text-xs text-slate-500 font-bold uppercase tracking-wider flex justify-between">
+            <span>{{ _('Results extracted successfully') }}</span>
+            <span>{{ answer.rows|length }} {{ _('records') }}</span>
+          </div>
+          {% else %}
+          <div class="p-12 text-center flex flex-col items-center">
+            <div class="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mb-3">
+              <svg class="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>
+            </div>
+            <p class="text-slate-500 font-medium">{{ _('The query executed successfully but returned no records.') }}</p>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    {% endif %}
+    </div>
+  {% endif %}
+</div>
+
+<style>
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .animate-fade-in-up {
+    animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+</style>
+{% endblock %}

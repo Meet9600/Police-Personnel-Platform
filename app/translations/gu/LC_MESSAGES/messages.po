@@ -1,0 +1,151 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: gu\n"
+
+msgid "Police Personnel & AI"
+msgstr "પોલીસ કર્મચારી અને AI"
+
+msgid "District SP Office"
+msgstr "જિલ્લા એસ.પી. કચેરી"
+
+msgid "District SP Office personnel system"
+msgstr "જિલ્લા એસ.પી. કચેરી કર્મચારી સિસ્ટમ"
+
+msgid "Dashboard"
+msgstr "ડેશબોર્ડ"
+
+msgid "Build a Team"
+msgstr "ટીમ બનાવો"
+
+msgid "Ask"
+msgstr "પૂછો"
+
+msgid "Personnel"
+msgstr "કર્મચારીઓ"
+
+msgid "Sign in"
+msgstr "સાઇન ઇન"
+
+msgid "Sign out"
+msgstr "સાઇન આઉટ"
+
+msgid "Username"
+msgstr "વપરાશકર્તા નામ"
+
+msgid "Password"
+msgstr "પાસવર્ડ"
+
+msgid "Invalid username or password."
+msgstr "અમાન્ય વપરાશકર્તા નામ અથવા પાસવર્ડ."
+
+msgid "Please complete the form correctly."
+msgstr "કૃપા કરીને ફોર્મ યોગ્ય રીતે ભરો."
+
+msgid "Overview"
+msgstr "ઝાંખી"
+
+msgid "Live snapshot of the cleaned personnel store."
+msgstr "સાફ કરેલા કર્મચારી ડેટાનો જીવંત સ્નેપશોટ."
+
+msgid "Total personnel"
+msgstr "કુલ કર્મચારીઓ"
+
+msgid "Officers"
+msgstr "અધિકારીઓ"
+
+msgid "Employees"
+msgstr "કર્મચારીઓ"
+
+msgid "Stations / Branches"
+msgstr "સ્ટેશન / શાખાઓ"
+
+msgid "Divisions"
+msgstr "વિભાગો"
+
+msgid "Ask a question"
+msgstr "પ્રશ્ન પૂછો"
+
+msgid "Specify a case requirement and get the most suitable team, with the reasoning behind each choice."
+msgstr "કેસની જરૂરિયાત જણાવો અને દરેક પસંદગી પાછળના કારણ સાથે સૌથી યોગ્ય ટીમ મેળવો."
+
+msgid "Ask in plain language about personnel — counts, skills, awards, vacancies."
+msgstr "કર્મચારીઓ વિશે સરળ ભાષામાં પૂછો — સંખ્યા, કૌશલ્ય, ઇનામો, ખાલી જગ્યાઓ."
+
+msgid "Station"
+msgstr "સ્ટેશન"
+
+msgid "Required skills"
+msgstr "જરૂરી કૌશલ્યો"
+
+msgid "Team size"
+msgstr "ટીમનું કદ"
+
+msgid "Rank mix (optional)"
+msgstr "રેન્ક મિશ્રણ (વૈકલ્પિક)"
+
+msgid "Recommend team"
+msgstr "ટીમ ભલામણ કરો"
+
+msgid "Recommended team"
+msgstr "ભલામણ કરેલ ટીમ"
+
+msgid "skill coverage"
+msgstr "કૌશલ્ય આવરણ"
+
+msgid "score"
+msgstr "સ્કોર"
+
+msgid "Skills not available at this station"
+msgstr "આ સ્ટેશન પર ઉપલબ્ધ ન હોય તેવા કૌશલ્યો"
+
+msgid "These personnel elsewhere in the division have the missing skills (not auto-assigned):"
+msgstr "વિભાગમાં અન્યત્ર આ કર્મચારીઓ પાસે ખૂટતા કૌશલ્યો છે (આપમેળે સોંપાયેલ નથી):"
+
+msgid "ID"
+msgstr "આઈડી"
+
+msgid "Name"
+msgstr "નામ"
+
+msgid "Rank"
+msgstr "રેન્ક"
+
+msgid "Skill"
+msgstr "કૌશલ્ય"
+
+msgid "Set the case requirements on the left, then recommend a team."
+msgstr "ડાબી બાજુ કેસની જરૂરિયાતો સેટ કરો, પછી ટીમની ભલામણ કરો."
+
+msgid "Plain-language questions about personnel. Answers come from the local database only."
+msgstr "કર્મચારીઓ વિશે સરળ ભાષાના પ્રશ્નો. જવાબો ફક્ત સ્થાનિક ડેટાબેઝમાંથી આવે છે."
+
+msgid "e.g. How many PSIs at Sanand? · List cyber officers · Who has the most awards?"
+msgstr "દા.ત. સાણંદ ખાતે કેટલા PSI છે? · સાયબર અધિકારીઓની યાદી · સૌથી વધુ ઇનામ કોની પાસે છે?"
+
+msgid "result(s)"
+msgstr "પરિણામ(ઓ)"
+
+msgid "No matching records."
+msgstr "કોઈ મેળ ખાતા રેકોર્ડ નથી."
+
+msgid "All"
+msgstr "બધા"
+
+msgid "Filter"
+msgstr "ફિલ્ટર"
+
+msgid "Service yrs"
+msgstr "સેવા વર્ષ"
+
+msgid "Awards"
+msgstr "ઇનામો"
+
+msgid "Skills"
+msgstr "કૌશલ્યો"
+
+msgid "shown (max 300)"
+msgstr "બતાવેલ (મહત્તમ 300)"
+
+msgid "Runs fully on-premise. No data leaves this network."
+msgstr "સંપૂર્ણપણે ઓન-પ્રિમાઇસ ચાલે છે. કોઈ ડેટા આ નેટવર્ક છોડતો નથી."

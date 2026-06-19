@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Secure Access') }}{% endblock %}
+{% block content %}
+<div class="min-h-[70vh] flex items-center justify-center">
+  <div class="card w-full max-w-md p-10 bg-white/80 backdrop-blur-sm border border-slate-200/60 shadow-xl">
+    <div class="text-center mb-8">
+      <div class="w-16 h-16 bg-blue-900 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg text-white font-bold text-xl tracking-wider">GP</div>
+      <h1 class="text-2xl font-bold text-slate-900 mb-2">{{ _('Secure Access') }}</h1>
+      <p class="text-sm text-slate-500 font-medium">{{ _('District SP Office Personnel Platform') }}</p>
+    </div>
+    
+    <form method="post" class="space-y-6">
+      <div>
+        <label class="block text-sm font-semibold text-slate-700 mb-2">{{ _('Officer ID') }}</label>
+        <input name="username" required autofocus autocomplete="off"
+               class="input-field" placeholder="Enter identification">
+      </div>
+      <div>
+        <label class="block text-sm font-semibold text-slate-700 mb-2">{{ _('Passcode') }}</label>
+        <input name="password" type="password" required
+               class="input-field" placeholder="Enter secure passcode">
+      </div>
+      <button class="btn w-full py-3 text-sm tracking-wide mt-2 shadow-md hover:shadow-lg" type="submit">
+        {{ _('Authenticate') }}
+      </button>
+    </form>
+    
+    <div class="mt-8 pt-6 border-t border-slate-100 text-center text-xs text-slate-400 font-medium">
+      {{ _('Authorized personnel only. All access is logged.') }}
+    </div>
+  </div>
+</div>
+{% endblock %}

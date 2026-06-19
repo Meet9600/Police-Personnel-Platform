@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Command Dashboard') }}{% endblock %}
+{% block content %}
+<div class="mb-10">
+  <h1 class="text-3xl font-bold text-slate-900 mb-2 tracking-tight">{{ _('Command Dashboard') }}</h1>
+  <p class="text-slate-500 font-medium">{{ _('Real-time insights across district personnel.') }}</p>
+</div>
+
+<div class="grid grid-cols-2 md:grid-cols-5 gap-6 mb-12">
+  {% set cards = [
+     (_('Total Strength'), stats.total),
+     (_('Active Officers'), stats.officers),
+     (_('Support Staff'), stats.employees),
+     (_('Stations'), stats.stations),
+     (_('Divisions'), stats.divisions)
+  ] %}
+  {% for label, value in cards %}
+  <div class="card p-6 flex flex-col justify-between group">
+    <div class="text-slate-500 text-sm font-semibold uppercase tracking-wider mb-2">{{ label }}</div>
+    <div class="text-4xl font-bold text-blue-900 tracking-tight group-hover:scale-105 transition-transform origin-left">{{ value }}</div>
+  </div>
+  {% endfor %}
+</div>
+
+<h2 class="text-xl font-bold text-slate-900 mb-6">{{ _('Quick Actions') }}</h2>
+<div class="grid md:grid-cols-2 gap-6">
+  <a href="{{ url_for('recommend') }}" class="card p-8 group block no-underline">
+    <div class="flex items-center justify-between mb-4">
+      <div class="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center">
+        <svg class="w-6 h-6 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+      </div>
+      <div class="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center group-hover:bg-blue-600 group-hover:border-blue-600 transition-colors">
+        <svg class="w-4 h-4 text-slate-400 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+      </div>
+    </div>
+    <div class="font-bold text-lg text-slate-900 mb-2">{{ _('Construct Team Profile') }}</div>
+    <p class="text-slate-500 text-sm leading-relaxed">
+      {{ _('Input specific case requirements to assemble the most capable team based on skills, rank, and availability. Includes transparent reasoning.') }}
+    </p>
+  </a>
+  
+  <a href="{{ url_for('ask_page') }}" class="card p-8 group block no-underline">
+    <div class="flex items-center justify-between mb-4">
+      <div class="w-12 h-12 rounded-full bg-indigo-50 flex items-center justify-center">
+        <svg class="w-6 h-6 text-indigo-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16l2.879-2.879m0 0a3 3 0 104.243-4.242 3 3 0 00-4.243 4.242zM21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+      </div>
+      <div class="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center group-hover:bg-indigo-600 group-hover:border-indigo-600 transition-colors">
+        <svg class="w-4 h-4 text-slate-400 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+      </div>
+    </div>
+    <div class="font-bold text-lg text-slate-900 mb-2">{{ _('Query Database') }}</div>
+    <p class="text-slate-500 text-sm leading-relaxed">
+      {{ _('Extract specific information using natural language. Query exact headcounts, specialties, pending transfers, and operational metrics.') }}
+    </p>
+  </a>
+</div>
+{% endblock %}

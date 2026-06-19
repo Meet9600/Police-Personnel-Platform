@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Personnel Directory') }}{% endblock %}
+{% block content %}
+<div class="flex justify-between items-end mb-6">
+  <div>
+    <h1 class="text-2xl font-bold text-slate-900 mb-1 tracking-tight">{{ _('Personnel Directory') }}</h1>
+    <p class="text-sm text-slate-500 font-medium">{{ _('Complete roster of active district personnel.') }}</p>
+  </div>
+</div>
+
+<form method="get" class="card p-5 mb-8 flex flex-col sm:flex-row gap-4 items-end bg-white">
+  <div class="flex-1 w-full">
+    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">{{ _('Rank') }}</label>
+    <select name="rank" class="input-field cursor-pointer appearance-auto">
+      <option value="">{{ _('All Ranks') }}</option>
+      {% for r in ranks %}<option value="{{ r.rank_code }}" {% if r.rank_code==sel_rank %}selected{% endif %}>{{ r.rank_code }}</option>{% endfor %}
+    </select>
+  </div>
+  <div class="flex-1 w-full">
+    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">{{ _('Specialty') }}</label>
+    <select name="spec" class="input-field cursor-pointer appearance-auto">
+      <option value="">{{ _('All Specialties') }}</option>
+      {% for s in specs %}<option value="{{ s.spec_code }}" {% if s.spec_code==sel_spec %}selected{% endif %}>{{ s.spec_code }}</option>{% endfor %}
+    </select>
+  </div>
+  <button class="btn whitespace-nowrap h-11 px-8 shadow-sm" type="submit">{{ _('Apply Filter') }}</button>
+</form>
+
+<div class="card overflow-x-auto border border-slate-200">
+  <table class="w-full text-left border-collapse">
+    <thead>
+      <tr>
+        <th>{{ _('Identification') }}</th>
+        <th>{{ _('Name') }}</th>
+        <th>{{ _('Rank') }}</th>
+        <th>{{ _('Current Station') }}</th>
+        <th>{{ _('Tenure') }}</th>
+        <th>{{ _('Commendations') }}</th>
+        <th>{{ _('Specialties') }}</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-slate-100">
+      {% for row in rows %}
+      <tr class="hover:bg-slate-50/80 transition-colors">
+        <td class="font-mono text-sm text-slate-500">{{ row.person_id }}</td>
+        <td class="font-semibold text-slate-900">{{ row.name }}</td>
+        <td><span class="chip">{{ row.rank_code }}</span></td>
+        <td class="text-slate-700">{{ row.station_en }}</td>
+        <td>
+          <span class="font-medium text-slate-700">{{ row.years_of_service if row.years_of_service is not none else 'N/A' }}</span>
+        </td>
+        <td>
+          {% if row.awards_count > 0 %}
+          <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-100 text-amber-700 text-xs font-bold">{{ row.awards_count }}</span>
+          {% else %}
+          <span class="text-slate-400">0</span>
+          {% endif %}
+        </td>
+        <td class="text-xs text-slate-500 max-w-xs truncate" title="{{ (row.specializations or []) | join(', ') }}">
+          {{ (row.specializations or []) | join(', ') }}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% if rows|length == 0 %}
+  <div class="p-8 text-center text-slate-500">
+    {{ _('No personnel match the selected filters.') }}
+  </div>
+  {% endif %}
+</div>
+<div class="text-xs text-slate-400 font-medium mt-3 text-right">
+  {{ rows|length }} {{ _('records displayed (limited to 300 maximum)') }}
+</div>
+{% endblock %}
