@@ -54,5 +54,5 @@ python3 pipeline/run_pipeline.py
 echo "Compiling UI translations..."
 pybabel compile -d app/translations
 
-echo "🚀 Starting Flask app on port 5000..."
-python3 -m flask --app app.main run --port 5000
+echo "🚀 Starting Flask app on port 5001..."
+python3 -m flask --app app.main run --port 5001
