@@ -1,55 +1,94 @@
 {% extends "base.html" %}
 {% block title %}{{ _('Command Dashboard') }}{% endblock %}
 {% block content %}
-<div class="mb-10">
-  <h1 class="text-3xl font-bold text-slate-900 mb-2 tracking-tight">{{ _('Command Dashboard') }}</h1>
-  <p class="text-slate-500 font-medium">{{ _('Real-time insights across district personnel.') }}</p>
+<div class="page-header">
+  <div class="page-eyebrow">{{ _('Operations Center') }}</div>
+  <h1>{{ _('Command Dashboard') }}</h1>
+  <p>{{ _('Real-time insights across district personnel.') }}</p>
 </div>
 
-<div class="grid grid-cols-2 md:grid-cols-5 gap-6 mb-12">
-  {% set cards = [
-     (_('Total Strength'), stats.total),
-     (_('Active Officers'), stats.officers),
-     (_('Support Staff'), stats.employees),
-     (_('Stations'), stats.stations),
-     (_('Divisions'), stats.divisions)
-  ] %}
-  {% for label, value in cards %}
-  <div class="card p-6 flex flex-col justify-between group">
-    <div class="text-slate-500 text-sm font-semibold uppercase tracking-wider mb-2">{{ label }}</div>
-    <div class="text-4xl font-bold text-blue-900 tracking-tight group-hover:scale-105 transition-transform origin-left">{{ value }}</div>
+<div class="status-strip">
+  <div class="status-item">
+    <span class="status-dot"></span>
+    {{ _('System Operational') }}
   </div>
-  {% endfor %}
+  <div class="status-item">
+    <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+    {{ _('On-Premise Database Connected') }}
+  </div>
+  <div class="status-item">
+    <svg class="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+    {{ _('Offline AI Engine Ready') }}
+  </div>
 </div>
 
-<h2 class="text-xl font-bold text-slate-900 mb-6">{{ _('Quick Actions') }}</h2>
-<div class="grid md:grid-cols-2 gap-6">
-  <a href="{{ url_for('recommend') }}" class="card p-8 group block no-underline">
-    <div class="flex items-center justify-between mb-4">
-      <div class="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center">
+<div class="grid grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-5 mb-12">
+  <div class="card stat-card p-5 sm:p-6">
+    <div class="stat-icon bg-blue-50">
+      <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+    </div>
+    <div class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">{{ _('Total Strength') }}</div>
+    <div class="stat-value text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">{{ stats.total }}</div>
+  </div>
+  <div class="card stat-card p-5 sm:p-6">
+    <div class="stat-icon bg-indigo-50">
+      <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+    </div>
+    <div class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">{{ _('Active Officers') }}</div>
+    <div class="stat-value text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">{{ stats.officers }}</div>
+  </div>
+  <div class="card stat-card p-5 sm:p-6">
+    <div class="stat-icon bg-slate-100">
+      <svg class="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+    </div>
+    <div class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">{{ _('Support Staff') }}</div>
+    <div class="stat-value text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">{{ stats.employees }}</div>
+  </div>
+  <div class="card stat-card p-5 sm:p-6">
+    <div class="stat-icon bg-emerald-50">
+      <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+    </div>
+    <div class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">{{ _('Stations') }}</div>
+    <div class="stat-value text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">{{ stats.stations }}</div>
+  </div>
+  <div class="card stat-card p-5 sm:p-6">
+    <div class="stat-icon bg-amber-50">
+      <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064"></path></svg>
+    </div>
+    <div class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">{{ _('Divisions') }}</div>
+    <div class="stat-value text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">{{ stats.divisions }}</div>
+  </div>
+</div>
+
+<div class="page-eyebrow mb-4">{{ _('Intelligence Tools') }}</div>
+<h2 class="text-xl font-extrabold text-slate-900 mb-6 tracking-tight">{{ _('Quick Actions') }}</h2>
+<div class="grid md:grid-cols-2 gap-5 sm:gap-6">
+  <a href="{{ url_for('recommend') }}" class="card card-interactive action-card p-7 sm:p-8">
+    <div class="flex items-center justify-between mb-5">
+      <div class="action-card-icon bg-blue-50">
         <svg class="w-6 h-6 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
       </div>
-      <div class="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center group-hover:bg-blue-600 group-hover:border-blue-600 transition-colors">
-        <svg class="w-4 h-4 text-slate-400 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+      <div class="action-card-arrow">
+        <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
       </div>
     </div>
-    <div class="font-bold text-lg text-slate-900 mb-2">{{ _('Construct Team Profile') }}</div>
-    <p class="text-slate-500 text-sm leading-relaxed">
+    <div class="font-extrabold text-lg text-slate-900 mb-2">{{ _('Construct Team Profile') }}</div>
+    <p class="text-slate-500 text-sm leading-relaxed font-medium">
       {{ _('Input specific case requirements to assemble the most capable team based on skills, rank, and availability. Includes transparent reasoning.') }}
     </p>
   </a>
-  
-  <a href="{{ url_for('ask_page') }}" class="card p-8 group block no-underline">
-    <div class="flex items-center justify-between mb-4">
-      <div class="w-12 h-12 rounded-full bg-indigo-50 flex items-center justify-center">
+
+  <a href="{{ url_for('ask_page') }}" class="card card-interactive action-card p-7 sm:p-8">
+    <div class="flex items-center justify-between mb-5">
+      <div class="action-card-icon bg-indigo-50">
         <svg class="w-6 h-6 text-indigo-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16l2.879-2.879m0 0a3 3 0 104.243-4.242 3 3 0 00-4.243 4.242zM21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
       </div>
-      <div class="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center group-hover:bg-indigo-600 group-hover:border-indigo-600 transition-colors">
-        <svg class="w-4 h-4 text-slate-400 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+      <div class="action-card-arrow">
+        <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
       </div>
     </div>
-    <div class="font-bold text-lg text-slate-900 mb-2">{{ _('Query Database') }}</div>
-    <p class="text-slate-500 text-sm leading-relaxed">
+    <div class="font-extrabold text-lg text-slate-900 mb-2">{{ _('Query Database') }}</div>
+    <p class="text-slate-500 text-sm leading-relaxed font-medium">
       {{ _('Extract specific information using natural language. Query exact headcounts, specialties, pending transfers, and operational metrics.') }}
     </p>
   </a>

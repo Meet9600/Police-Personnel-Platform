@@ -18,6 +18,7 @@ results the Flask layer renders as a table.
 """
 import re
 import unicodedata
+import difflib
 from app.config import query
 
 # --- Controlled vocab loaded once from the clean store ----------------------
@@ -38,34 +39,97 @@ def _load_vocab():
     }
 
 
-# Gujarati keyword synonyms for ranks / common terms (ext, not exhaustive).
-GU_TERMS = {
-    "પીઆઈ": "PI", "પીએસઆઈ": "PSI", "પોલીસ ઇન્સ્પેક્ટર": "PI", "કોન્સ્ટેબલ": "PC",
-    "સાયબર": "CYBER", "સાઇબર": "CYBER", "ટ્રાફિક": "TRAFFIC", "મહિલા સુરક્ષા": "WOMEN_SAFETY",
-    "કેટલા": "count", "કોણ": "who", "યાદી": "list", "ઇનામ": "awards", "સજા": "punishments",
-    "ખાલી": "vacancy",
-}
-
-# Specialization keyword aliases (english) -> spec_code
-SPEC_ALIASES = {
-    "cyber": "CYBER", "traffic": "TRAFFIC", "crime": "CRIME_INVEST",
-    "investigation": "CRIME_INVEST", "she team": "WOMEN_SAFETY",
-    "women safety": "WOMEN_SAFETY", "child": "CHILD_WELFARE", "court": "COURT_LEGAL",
-    "driver": "DRIVER", "computer": "IT_COMPUTER", "it": "IT_COMPUTER",
-    "control": "CONTROL_ROOM", "wireless": "CONTROL_ROOM", "sog": "SOG",
-    "commando": "COMMANDO", "gunman": "COMMANDO", "dog": "DOG_SQUAD",
-    "armoury": "ARMOURY", "armory": "ARMOURY", "guard": "GUARD_SECURITY",
-    "vip": "VIP_PROTECTION", "accounts": "ACCOUNTS", "patrol": "PATROL_MOBILE",
-    "pso": "PSO", "registry": "REGISTRY", "store": "STORE",
-}
-
-
 def _norm(text):
     return unicodedata.normalize("NFC", text or "").strip()
 
 
 def _lower(text):
     return _norm(text).lower()
+
+
+def _normalize_guj(text):
+    if not text:
+        return ""
+    # Standardize interchangeable vowels and character combinations
+    text = unicodedata.normalize("NFC", text)
+    text = text.replace("ઇ", "ઈ").replace("િ", "ી")
+    text = text.replace("ઉ", "ઊ").replace("ુ", "ૂ")
+    text = text.replace("સાઇ", "સાય")
+    text = text.replace("આે", "ઓ")
+    return text
+
+
+def _guj_stem(word):
+    if not word:
+        return ""
+    # Common postpositions, suffixes, and plural markers in Gujarati (longest first)
+    suffixes = [
+        "વાળાં", "વાળું", "વાળી", "વાળા",
+        "માં", "થી", "ને", "ની", "ના", "નું", "નાં", "નો", "ઓ", "આે", "વાર"
+    ]
+    changed = True
+    while changed:
+        changed = False
+        for suff in suffixes:
+            if word.endswith(suff) and len(word) > len(suff):
+                word = word[:-len(suff)]
+                changed = True
+                break
+        # Also remove vowel sign plural markers ો, ોં, ાં
+        for suff in ["ોં", "ો", "ાં"]:
+            if word.endswith(suff) and len(word) > len(suff):
+                word = word[:-len(suff)]
+                changed = True
+                break
+    return word
+
+
+def _english_singular(word):
+    if word.isalpha() and word.endswith('s') and len(word) > 2:
+        if word not in ["is", "as", "us", "yes", "this", "class", "status", "news"]:
+            return word[:-1]
+    return word
+
+
+def _similarity(s1, s2):
+    return difflib.SequenceMatcher(None, s1, s2).ratio()
+
+
+def _clean_word(w):
+    return w.strip('!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~?')
+
+
+def _tokenize(text):
+    if not text:
+        return []
+    normalized = _normalize_guj(_lower(text))
+    tokens = []
+    for w in normalized.split():
+        cleaned = _clean_word(w)
+        if cleaned:
+            tokens.append(cleaned)
+    return tokens
+
+
+def _stem_tokens(tokens):
+    stemmed = []
+    for t in tokens:
+        if t.isascii():
+            stemmed.append(_english_singular(t))
+        else:
+            stemmed.append(_guj_stem(t))
+    return [w for w in stemmed if w]
+
+
+def _match_phrase_in_tokens(phrase_tokens, query_tokens):
+    if not phrase_tokens or not query_tokens:
+        return False
+    n_p = len(phrase_tokens)
+    n_q = len(query_tokens)
+    for i in range(n_q - n_p + 1):
+        if query_tokens[i:i+n_p] == phrase_tokens:
+            return True
+    return False
 
 
 class NLQResult:
@@ -107,58 +171,182 @@ class NLQEngine:
         return t
 
     def _match_station(self, text):
-        t = self._apply_aliases(text)
-        # Sort stations by length descending to match longest possible string first
-        best = None
+        tokens = _tokenize(text)
+        stemmed_tokens = _stem_tokens(tokens)
+        stemmed_tokens = [self._apply_aliases(t) for t in stemmed_tokens]
+
+        best_station = None
+        best_score = 0.0
+
         for s in self.vocab["stations"]:
-            for cand in (s.get("name_en"), s.get("name_raw")):
-                if not cand: continue
-                c = _lower(cand)
-                # Direct match: e.g. cand is "સાણંદ" and t is "how many in સાણંદ"
-                if c in t:
-                    if best is None or len(c) > best[1]:
-                        best = (s, len(c))
-                # Partial match: e.g. cand is "સાણંદ ટાઉન" and t has "સાણંદ"
-                # If cand has multiple words, and the most significant word is in t
-                words = c.split()
-                if words and len(words[0]) > 3 and words[0] in t:
-                    if best is None or len(words[0]) > best[1]:
-                        best = (s, len(words[0]))
-        return best[0] if best else None
+            name_en = _lower(s.get("name_en") or "")
+            name_gu = _normalize_guj(_lower(s.get("name_raw") or ""))
+            
+            vocab_tokens_en = _stem_tokens(_tokenize(name_en))
+            vocab_tokens_gu = _stem_tokens(_tokenize(name_gu))
+            
+            # 1. Exact match of the entire vocab name in stemmed tokens
+            if _match_phrase_in_tokens(vocab_tokens_en, stemmed_tokens) or \
+               _match_phrase_in_tokens(vocab_tokens_gu, stemmed_tokens):
+                score = 1.0 + len(vocab_tokens_en) / 100.0
+                if score > best_score:
+                    best_score = score
+                    best_station = s
+                    continue
+
+            # 2. Fuzzy match word by word (typo tolerance)
+            for t_word in stemmed_tokens:
+                for v_word in vocab_tokens_en + vocab_tokens_gu:
+                    sim = _similarity(t_word, v_word)
+                    if sim > 0.85:
+                        score = sim
+                        if score > best_score:
+                            best_score = score
+                            best_station = s
+
+        return best_station
 
     def _match_division(self, text):
-        t = self._apply_aliases(text)
+        tokens = _tokenize(text)
+        stemmed_tokens = [self._apply_aliases(t) for t in _stem_tokens(tokens)]
+
+        best_division = None
+        best_score = 0.0
+
         for d in self.vocab["divisions"]:
-            for cand in (d.get("name_en"), d.get("name_raw")):
-                if not cand: continue
-                c = _lower(cand)
-                if c in t:
-                    return d
-                words = c.split()
-                if words and len(words[0]) > 3 and words[0] in t:
-                    return d
-        return None
+            name_en = _lower(d.get("name_en") or "")
+            name_gu = _normalize_guj(_lower(d.get("name_raw") or ""))
+            
+            # Clean/strip division suffixes from vocab
+            name_en_clean = name_en.replace("division", "").strip()
+            name_gu_clean = name_gu.replace("ડિવિઝન", "").strip()
+            
+            vocab_tokens_en = _stem_tokens(_tokenize(name_en_clean))
+            vocab_tokens_gu = _stem_tokens(_tokenize(name_gu_clean))
+            
+            if _match_phrase_in_tokens(vocab_tokens_en, stemmed_tokens) or \
+               _match_phrase_in_tokens(vocab_tokens_gu, stemmed_tokens):
+                score = 1.0 + len(vocab_tokens_en) / 100.0
+                if score > best_score:
+                    best_score = score
+                    best_division = d
+                    continue
+
+            for t_word in stemmed_tokens:
+                for v_word in vocab_tokens_en + vocab_tokens_gu:
+                    sim = _similarity(t_word, v_word)
+                    if sim > 0.85:
+                        score = sim
+                        if score > best_score:
+                            best_score = score
+                            best_division = d
+
+        return best_division
 
     def _match_rank(self, text):
-        t = _lower(text)
+        tokens = _tokenize(text)
+        stemmed_tokens = _stem_tokens(tokens)
+        
+        # Rank mappings defined as tokenized lists
+        rank_mapping = {
+            # PI
+            "PI": [["pi"], ["police", "inspector"], ["inspector"], ["પીઆઈ"], ["પોલીસ", "ઇન્સ્પેક્ટર"], ["ઇન્સ્પેક્ટર"], ["ઈન્સ્પેક્ટર"]],
+            # PSI
+            "PSI": [["psi"], ["police", "sub", "inspector"], ["police", "sub-inspector"], ["sub", "inspector"], ["sub-inspector"], ["પીએસઆઈ"], ["પોલીસ", "સબ", "ઇન્સ્પેક્ટર"], ["પોલીસ", "સબ", "ઈન્સ્પેક્ટર"], ["સબ", "ઇન્સ્પેક્ટર"], ["સબ", "ઈન્સ્પેક્ટર"]],
+            # AASI
+            "AASI": [["aasi"], ["armed", "assistant", "sub", "inspector"], ["armed", "assistant", "sub-inspector"], ["એએએસઆઈ"], ["સશસ્ત્ર", "મદદનીશ", "સબ", "ઇન્સ્પેક્ટર"]],
+            # UASI
+            "UASI": [["uasi"], ["unarmed", "assistant", "sub", "inspector"], ["unarmed", "assistant", "sub-inspector"], ["યુએએસઆઈ"], ["નિઃશસ્ત્ર", "મદદનીશ", "સબ", "ઇન્સ્પેક્ટર"]],
+            # ASI
+            "UASI": [["asi"], ["assistant", "sub", "inspector"], ["assistant", "sub-inspector"], ["એએસઆઈ"], ["મદદનીશ", "સબ", "ઇન્સ્પેક્ટર"]],
+            # AHC
+            "AHC": [["ahc"], ["armed", "head", "constable"], ["સશસ્ત્ર", "હેડ", "કોન્સ્ટેબલ"]],
+            # UHC
+            "UHC": [["uhc"], ["unarmed", "head", "constable"], ["નિઃશસ્ત્ર", "હેડ", "કોન્સ્ટેબલ"]],
+            # HC
+            "UHC": [["hc"], ["head", "constable"], ["jamadar"], ["હેડ", "કોન્સ્ટેબલ"], ["જમાદાર"]],
+            # APC
+            "APC": [["apc"], ["armed", "police", "constable"], ["armed", "constable"], ["સશસ્ત્ર", "પોલીસ", "કોન્સ્ટેબલ"], ["સશસ્ત્ર", "કોન્સ્ટેબલ"]],
+            # UPC
+            "UPC": [["upc"], ["unarmed", "police", "constable"], ["unarmed", "constable"], ["નિઃશસ્ત્ર", "પોલીસ", "કોન્સ્ટેબલ"], ["નિઃશસ્ત્ર", "કોન્સ્ટેબલ"]],
+            # PC
+            "UPC": [["pc"], ["constable"], ["police", "constable"], ["કોન્સ્ટેબલ"], ["પોલીસ", "કોન્સ્ટેબલ"]],
+            # ALR
+            "ALR": [["alr"], ["armed", "lokrakshak"], ["Armed", "lr"], ["સશસ્ત્ર", "લોકરક્ષક"]],
+            # ULR
+            "ULR": [["ulr"], ["unarmed", "lokrakshak"], ["unarmed", "lr"], ["નિઃશસ્ત્ર", "લોકરક્ષક"]],
+            # LR
+            "ULR": [["lr"], ["lokrakshak"], ["lok", "rakshak"], ["લોકરક્ષક"]],
+        }
+
+        # Check in order of specificity (longest phrase first)
+        all_matches = []
+        for rank_code, phrases in rank_mapping.items():
+            for p in phrases:
+                p_stemmed = _stem_tokens(p)
+                if _match_phrase_in_tokens(p_stemmed, stemmed_tokens):
+                    all_matches.append((rank_code, len(p_stemmed)))
+                    
+        if all_matches:
+            all_matches.sort(key=lambda x: -x[1])
+            return all_matches[0][0]
+
         for r in self.vocab["ranks"]:
             code = r["rank_code"].lower()
-            # match the code with an optional trailing plural 's' (PSIs, PIs)
-            if re.search(r"\b" + re.escape(code) + r"s?\b", t):
+            if code in tokens:
                 return r["rank_code"]
-        for gu, gcode in GU_TERMS.items():
-            if gu in text and gcode in {x["rank_code"] for x in self.vocab["ranks"]}:
-                return gcode
+
         return None
 
     def _match_spec(self, text):
-        t = _lower(text)
-        for alias, code in SPEC_ALIASES.items():
-            if re.search(r"\b" + re.escape(alias) + r"\b", t):
-                return code
-        for gu, code in GU_TERMS.items():
-            if gu in text and any(s["spec_code"] == code for s in self.vocab["specs"]):
-                return code
+        tokens = _tokenize(text)
+        stemmed_tokens = _stem_tokens(tokens)
+
+        # Specialization mappings as tokenized lists
+        spec_mapping = {
+            "CYBER": [["cyber"], ["સાઇબર"], ["સાયબર"], ["cyber", "crime"]],
+            "TRAFFIC": [["traffic"], ["ટ્રાફિક"]],
+            "CRIME_INVEST": [["crime"], ["investigation"], ["ક્રાઈમ"], ["તપાસ"]],
+            "WOMEN_SAFETY": [["she", "team"], ["women", "safety"], ["female", "safety"], ["મહિલા", "સુરક્ષા"], ["શી", "ટીમ"], ["બહેનો", "સુરક્ષા"]],
+            "CHILD_WELFARE": [["child"], ["child", "welfare"], ["spc"], ["બાળ", "કલ્યાણ"], ["ચાઇલ્ડ", "વેલફેર"]],
+            "COURT_LEGAL": [["court"], ["summons"], ["warrant"], ["કોર્ટ"], ["સમન્સ"], ["વોરંટ"]],
+            "DRIVER": [["driver"], ["ડ્રાઈવર"]],
+            "IT_COMPUTER": [["computer"], ["it"], ["કોમ્પ્યુટર"], ["કમ્પ્યુટર"]],
+            "CONTROL_ROOM": [["control"], ["wireless"], ["કંટ્રોલ"], ["વાયરલેસ"]],
+            "SOG": [["sog"], ["special", "operations"], ["એસઓજી"]],
+            "COMMANDO": [["commando"], ["gunman"], ["કમાન્ડો"], ["ગનમેન"]],
+            "DOG_SQUAD": [["dog"], ["dog", "squad"], ["ડોગ"], ["ડોગ", "સ્ક્વોડ"]],
+            "ARMOURY": [["armoury"], ["armory"], ["આર્મોરી"], ["હથિયાર"]],
+            "GUARD_SECURITY": [["guard"], ["security"], ["ગાર્ડ"], ["સુરક્ષા"]],
+            "VIP_PROTECTION": [["vip"], ["bungalow"], ["બંગલો"]],
+            "ACCOUNTS": [["accounts"], ["એકાઉન્ટ"], ["હિસાબ"]],
+            "PATROL_MOBILE": [["patrol"], ["mobile", "patrol"], ["પેટ્રોલ"], ["મોબાઈલ", "પેટ્રોલ"]],
+            "PSO": [["pso"], ["પીએસઓ"]],
+            "REGISTRY": [["registry"], ["રજીસ્ટ્રી"]],
+            "STORE": [["store"], ["સ્ટોર"]],
+        }
+
+        all_matches = []
+        for spec_code, phrases in spec_mapping.items():
+            for p in phrases:
+                p_stemmed = _stem_tokens(p)
+                if _match_phrase_in_tokens(p_stemmed, stemmed_tokens):
+                    all_matches.append((spec_code, len(p_stemmed)))
+                    
+        if all_matches:
+            all_matches.sort(key=lambda x: -x[1])
+            best_spec, best_len = all_matches[0]
+            # Special check to avoid false matches for single short English tokens
+            if best_spec == "IT_COMPUTER" and ["it"] in spec_mapping["IT_COMPUTER"]:
+                if "it" not in tokens:
+                    return None
+            return best_spec
+
+        for s in self.vocab["specs"]:
+            code = s["spec_code"].lower()
+            if code in tokens:
+                return s["spec_code"]
+
         return None
 
     # ----- main entry -----
@@ -168,49 +356,96 @@ class NLQEngine:
         """
         q = _norm(question)
         ql = _lower(q)
+        q_norm = _normalize_guj(ql)
+        
         station = self._match_station(q)
         division = self._match_division(q)
         rank = self._match_rank(q)
         spec = self._match_spec(q)
 
-        # Advanced Experience extraction (English + Gujarati)
-        years_match_more = re.search(r"(?:more than|>|over)\s*(\d+)\s*(?:year|વર્ષ)", ql)
-        if not years_match_more: years_match_more = re.search(r"(\d+)\s*(?:year|વર્ષ)(?:થી વધુ)", q)
-            
-        years_match_less = re.search(r"(?:less than|<|under)\s*(\d+)\s*(?:year|વર્ષ)", ql)
-        if not years_match_less: years_match_less = re.search(r"(\d+)\s*(?:year|વર્ષ)(?:થી ઓછો|થી ઓછી)", q)
-            
-        min_years = int(years_match_more.group(1)) if years_match_more else None
-        max_years = int(years_match_less.group(1)) if years_match_less else None
+        # 1. Distinguish between Age and Years of Service / Experience
+        has_age_context = any(x in ql or x in q_norm for x in ["age", "old", "ઉંમર", "મોટી", "મોટો", "નાની", "નાનો"])
 
-        # Age extraction
-        age_under = re.search(r"(?:under|<|younger than)\s*(\d+)\s*(?:year|વર્ષ)", ql)
-        if not age_under: age_under = re.search(r"(\d+)\s*(?:year|વર્ષ)થી નાની", q)
+        min_years = None
+        max_years = None
+        min_age = None
+        max_age = None
+
+        if not has_age_context:
+            years_match_more = re.search(r"(?:more than|>|over)\s*(\d+)\s*(?:years?|વર્ષ)", ql)
+            if not years_match_more:
+                years_match_more = re.search(r"(\d+)\s*(?:years?|વર્ષ)(?:\s*(?:કે તેથી વધારે|કે તેથી વધુ|થી વધારે|થી વધુ|વધુ|અનુભવ|કામ))", q)
+            if not years_match_more:
+                years_match_more = re.search(r"(\d+)\+\s*(?:years?|વર્ષ)", ql)
+            if years_match_more:
+                min_years = int(years_match_more.group(1))
+
+            years_match_less = re.search(r"(?:less than|<|under)\s*(\d+)\s*(?:years?|વર્ષ)", ql)
+            if not years_match_less:
+                years_match_less = re.search(r"(\d+)\s*(?:years?|વર્ષ)(?:\s*(?:કે તેથી ઓછો|કે તેથી ઓછી|થી ઓછો|થી ઓછી|ઓછો|ઓછી))", q)
+            if years_match_less:
+                max_years = int(years_match_less.group(1))
         
-        age_over = re.search(r"(?:over|>|older than)\s*(\d+)\s*(?:year|વર્ષ)", ql)
-        if not age_over: age_over = re.search(r"(\d+)\s*(?:year|વર્ષ)થી મોટી", q)
-            
-        max_age = int(age_under.group(1)) if age_under else None
-        min_age = int(age_over.group(1)) if age_over else None
+        else:
+            age_under = re.search(r"(?:under|<|younger than)\s*(\d+)\s*(?:years?|વર્ષ)", ql)
+            if not age_under:
+                age_under = re.search(r"(\d+)\s*(?:years?|વર્ષ)થી\s*(?:નાની|નાનો|ઓછી|ઓછો)", q)
+            if not age_under:
+                age_under = re.search(r"(\d+)\s*(?:વર્ષ)\s*(?:થી ઓછી ઉંમર|થી નાની ઉંમર)", q)
+            if age_under:
+                max_age = int(age_under.group(1))
 
-        # Gender
+            age_over = re.search(r"(?:over|>|older than)\s*(\d+)\s*(?:years?|વર્ષ)", ql)
+            if not age_over:
+                age_over = re.search(r"(\d+)\s*(?:years?|વર્ષ)થી\s*(?:મોટી|મોટો|વધુ|વધારે)", q)
+            if not age_over:
+                age_over = re.search(r"(\d+)\s*(?:વર્ષ)\s*(?:થી વધુ ઉંમર|થી મોટી ઉંમર)", q)
+            if age_over:
+                min_age = int(age_over.group(1))
+
+        # 2. Gender extraction (plurals/stemmed compatible whole tokens)
         gender = None
-        if re.search(r"\b(female|lady|women|woman)\b", ql) or any(x in q for x in ("સ્ત્રી", "મહિલા", "બહેન")):
+        gender_f_keywords = ["female", "lady", "women", "woman", "she", "મહિલા", "સ્ત્રી", "બહેન"]
+        gender_m_keywords = ["male", "men", "man", "he", "પુરુષ", "પુરૂષ", "ભાઈ"]
+        
+        stemmed_tokens = _stem_tokens(_tokenize(q_norm))
+        
+        norm_f_kws = [_guj_stem(_normalize_guj(_lower(k))) for k in gender_f_keywords]
+        norm_m_kws = [_guj_stem(_normalize_guj(_lower(k))) for k in gender_m_keywords]
+        
+        if any(w in stemmed_tokens for w in norm_f_kws) or any(any(fk in t for fk in ["મહીલા", "સ્ત્રી", "બહેન"]) for t in stemmed_tokens if not t.isascii()):
             gender = 'F'
-        elif re.search(r"\b(male|men|man)\b", ql) or any(x in q for x in ("પુરુષ", "ભાઈ")):
+        elif any(w in stemmed_tokens for w in norm_m_kws) or any(any(mk in t for mk in ["પુરુષ", "પુરૂષ", "ભાઈ"]) for t in stemmed_tokens if not t.isascii()):
             gender = 'M'
 
-        # Disciplinary record
-        clean_record = bool(re.search(r"\b(clean record|no punishment|unpunished)\b", ql)) \
-            or any(x in q for x in ("ક્લીન રેકોર્ડ", "કોઈ સજા નહિ", "સજા વગર"))
+        # 3. Disciplinary record (clean_record)
+        clean_record_terms = [
+            "clean record", "no punishment", "unpunished", "good conduct", "clean sheet",
+            "ક્લીન રેકોર્ડ", "કોઈ સજા", "સજા વગર", "સજા ન", "નિષ્કલંક", "કોઈ શિક્ષા", "શિક્ષા વગર"
+        ]
+        norm_clean_terms = [_normalize_guj(_lower(t)) for t in clean_record_terms]
+        
+        clean_record = False
+        for term in norm_clean_terms:
+            if term in q_norm or term in ql:
+                clean_record = True
+                break
 
-        wants_count = bool(re.search(r"\b(how many|count|number of|total|quantity)\b", ql)) \
-            or any(x in q for x in ("કેટલા", "કુલ સંખ્યા"))
-        wants_list = bool(re.search(r"\b(list|show|which|who|name|get|find|display|officer|personnel|all)\b", ql)) \
-            or any(x in q for x in ("યાદી", "કોણ", "શોધો", "બતાવો", "બધા", "ઓફિસર", "અધિકારી", "કર્મચારી"))
-        wants_awards = bool(re.search(r"\b(award|top|best|highest)\b", ql)) or "ઇનામ" in q
-        wants_vacancy = bool(re.search(r"\b(vacanc|vacant|shortage|empty)\b", ql)) \
-            or any(x in q for x in ("ખાલી", "જગ્યા", "ઘટ"))
+        # 4. Semantic trigger keywords
+        count_kws = ["how many", "count", "number of", "total", "quantity", "sum", "કેટલા", "કેટલી", "કેટલો", "કુલ સંખ્યા", "સંખ્યા", "ગણતરી"]
+        list_kws = ["list", "show", "which", "who", "name", "get", "find", "display", "officer", "personnel", "all", "detail", "યાદી", "કોણ", "શોધો", "બતાવો", "બધા", "લિસ્ટ", "કર્મચારી", "અધિકારી", "નામ"]
+        award_kws = ["award", "top", "best", "highest", "medal", "reward", "honored", "honoured", "ઇનામ", "ઈનામ", "એવોર્ડ", "મેડલ", "પુરસ્કાર", "ઉત્કૃષ્ટ"]
+        vacancy_kws = ["vacancy", "vacant", "shortage", "empty", "need", "lack", "ખાલી", "જગ્યા", "ઘટ", "અછત"]
+
+        norm_count_kws = [_normalize_guj(_lower(k)) for k in count_kws]
+        norm_list_kws = [_normalize_guj(_lower(k)) for k in list_kws]
+        norm_award_kws = [_normalize_guj(_lower(k)) for k in award_kws]
+        norm_vacancy_kws = [_normalize_guj(_lower(k)) for k in vacancy_kws]
+
+        wants_count = any(k in q_norm or k in ql or k in stemmed_tokens for k in norm_count_kws)
+        wants_list = any(k in q_norm or k in ql or k in stemmed_tokens for k in norm_list_kws)
+        wants_awards = any(k in q_norm or k in ql or k in stemmed_tokens for k in norm_award_kws)
+        wants_vacancy = any(k in q_norm or k in ql or k in stemmed_tokens for k in norm_vacancy_kws)
 
         filters = {
             "min_years": min_years, "max_years": max_years,
@@ -219,33 +454,94 @@ class NLQEngine:
         }
         has_filter = any(v is not None and v is not False for v in filters.values())
 
-        # --- Intent: vacancy at a station ---
-        if wants_vacancy and station:
-            return self._q_vacancy(station)
+        # 5. Intent Classifier Scoring
+        scores = {
+            "station_vacancy": 0.0,
+            "top_awards": 0.0,
+            "count_personnel": 0.0,
+            "list_personnel": 0.0
+        }
 
-        # --- Intent: most awards ---
-        if wants_awards and (wants_list or "most" in ql or station or has_filter):
-            return self._q_top_awards(station, filters)
+        # Intent 1: station_vacancy
+        if wants_vacancy:
+            scores["station_vacancy"] += 3.0
+        if station:
+            scores["station_vacancy"] += 2.0
+        elif division:
+            scores["station_vacancy"] += 1.0
 
-        # --- Intent: count of a rank (optionally at a station / division) ---
-        if wants_count and (rank or station or division or has_filter):
-            return self._q_count(rank, station, division, filters)
-
-        # --- Intent: list people by specialization (optionally rank/place) ---
-        if (wants_list or spec or has_filter) and (spec or rank or station or division or has_filter):
-            return self._q_list(rank, spec, station, division, filters)
-
-        # --- Fallback: count people at a place ---
+        # Intent 2: top_awards
+        if wants_awards:
+            scores["top_awards"] += 3.0
+        if wants_list:
+            scores["top_awards"] += 1.0
+        if wants_count:
+            scores["top_awards"] += 0.5
         if station or division:
-            return self._q_count(rank, station, division, filters)
+            scores["top_awards"] += 0.5
+        if has_filter:
+            scores["top_awards"] += 0.5
 
-        return NLQResult(
-            intent="unknown", interpretation="", columns=[], rows=[],
-            sql_label=None, ok=False,
-            message=("Could not confidently interpret the question. Try e.g. "
-                     "“How many female PSIs at <station>?”, “List officers in "
-                     "<division> with clean record”, or “<station> માં કેટલા અધિકારીઓ છે?”"),
-        )
+        # Intent 3: count_personnel
+        if wants_count:
+            scores["count_personnel"] += 3.0
+        if rank:
+            scores["count_personnel"] += 1.0
+        if spec:
+            scores["count_personnel"] += 1.0
+        if station or division:
+            scores["count_personnel"] += 1.0
+        if has_filter:
+            scores["count_personnel"] += 1.0
+
+        # Intent 4: list_personnel
+        if wants_list:
+            scores["list_personnel"] += 3.0
+        if spec:
+            scores["list_personnel"] += 2.0
+        if rank:
+            scores["list_personnel"] += 1.0
+        if station or division:
+            scores["list_personnel"] += 1.0
+        if has_filter:
+            scores["list_personnel"] += 1.0
+
+        # Select highest intent
+        best_intent, best_score = max(scores.items(), key=lambda x: x[1])
+
+        # Verification threshold
+        confidence_threshold = 2.0
+        has_entities = bool(rank or spec or station or division or has_filter)
+        
+        is_nonsense = True
+        if best_score >= confidence_threshold:
+            if best_intent == "station_vacancy" and (station or division):
+                is_nonsense = False
+            elif best_intent == "top_awards":
+                is_nonsense = False
+            elif best_intent == "count_personnel" and has_entities:
+                is_nonsense = False
+            elif best_intent == "list_personnel" and (has_entities or wants_list):
+                is_nonsense = False
+
+        if is_nonsense:
+            return NLQResult(
+                intent="unknown", interpretation="", columns=[], rows=[],
+                sql_label=None, ok=False,
+                message=("Could not confidently interpret the question. Try e.g. "
+                         "“How many female PSIs at <station>?”, “List officers in "
+                         "<division> with clean record”, or “<station> માં કેટલા અધિકારીઓ છે?”"),
+            )
+
+        # 6. Execute mapped template
+        if best_intent == "station_vacancy":
+            return self._q_vacancy(station, division)
+        elif best_intent == "top_awards":
+            return self._q_top_awards(station, division, filters)
+        elif best_intent == "count_personnel":
+            return self._q_count(rank, station, division, filters)
+        else:
+            return self._q_list(rank, spec, station, division, filters)
 
     def _apply_filters(self, filters, joins, where, params, desc):
         if not filters: return
@@ -330,7 +626,7 @@ class NLQEngine:
             rows=rows, sql_label="list_personnel",
         )
 
-    def _q_top_awards(self, station, filters=None):
+    def _q_top_awards(self, station, division=None, filters=None):
         where, params, desc = ["p.is_active", "perf.awards_count > 0"], [], []
         joins = [
             "JOIN clean.person_performance perf ON perf.person_id = p.person_id",
@@ -339,6 +635,9 @@ class NLQEngine:
         if station:
             where.append("p.current_station_id = %s"); params.append(station["station_id"])
             desc.append(f"at {station['name_en']}")
+        elif division:
+            where.append("s.division_id = %s"); params.append(division["division_id"])
+            desc.append(f"in {division['name_en']} division")
         self._apply_filters(filters, joins, where, params, desc)
         
         sql = f"""
@@ -358,22 +657,39 @@ class NLQEngine:
             rows=rows, sql_label="top_awards",
         )
 
-    def _q_vacancy(self, station):
-        sql = """
-            SELECT s.name_en AS station, c.rank_band,
-                   c.approved_total, c.present_total, c.vacancy
-            FROM clean.station_capacity c
-            JOIN clean.dim_station s ON s.station_id = c.station_id
-            WHERE c.station_id = %s
-            ORDER BY c.rank_band
-        """
-        rows = query(sql, [station["station_id"]])
-        return NLQResult(
-            intent="station_vacancy",
-            interpretation=f"Approved vs present strength at {station['name_en']}",
-            columns=["station", "rank_band", "approved_total", "present_total", "vacancy"],
-            rows=rows, sql_label="station_vacancy",
-        )
+    def _q_vacancy(self, station, division=None):
+        if station:
+            sql = """
+                SELECT s.name_en AS station, c.rank_band,
+                       c.approved_total, c.present_total, c.vacancy
+                FROM clean.station_capacity c
+                JOIN clean.dim_station s ON s.station_id = c.station_id
+                WHERE c.station_id = %s
+                ORDER BY c.rank_band
+            """
+            rows = query(sql, [station["station_id"]])
+            return NLQResult(
+                intent="station_vacancy",
+                interpretation=f"Approved vs present strength at {station['name_en']}",
+                columns=["station", "rank_band", "approved_total", "present_total", "vacancy"],
+                rows=rows, sql_label="station_vacancy",
+            )
+        else:
+            sql = """
+                SELECT s.name_en AS station, c.rank_band,
+                       c.approved_total, c.present_total, c.vacancy
+                FROM clean.station_capacity c
+                JOIN clean.dim_station s ON s.station_id = c.station_id
+                WHERE s.division_id = %s
+                ORDER BY s.name_en, c.rank_band
+            """
+            rows = query(sql, [division["division_id"]])
+            return NLQResult(
+                intent="station_vacancy",
+                interpretation=f"Approved vs present strength in {division['name_en']} division",
+                columns=["station", "rank_band", "approved_total", "present_total", "vacancy"],
+                rows=rows, sql_label="station_vacancy",
+            )
 
 
 # module-level singleton, lazily built

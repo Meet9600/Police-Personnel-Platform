@@ -1,33 +1,41 @@
 {% extends "base.html" %}
 {% block title %}{{ _('Personnel Directory') }}{% endblock %}
 {% block content %}
-<div class="flex justify-between items-end mb-6">
+<div class="page-header flex flex-col sm:flex-row sm:justify-between sm:items-end gap-4">
   <div>
-    <h1 class="text-2xl font-bold text-slate-900 mb-1 tracking-tight">{{ _('Personnel Directory') }}</h1>
-    <p class="text-sm text-slate-500 font-medium">{{ _('Complete roster of active district personnel.') }}</p>
+    <div class="page-eyebrow">{{ _('Roster Management') }}</div>
+    <h1>{{ _('Personnel Directory') }}</h1>
+    <p>{{ _('Complete roster of active district personnel.') }}</p>
+  </div>
+  <div class="chip chip-blue self-start">
+    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+    {{ rows|length }} {{ _('records') }}
   </div>
 </div>
 
-<form method="get" class="card p-5 mb-8 flex flex-col sm:flex-row gap-4 items-end bg-white">
+<form method="get" class="card p-5 sm:p-6 mb-8 flex flex-col sm:flex-row gap-4 items-end">
   <div class="flex-1 w-full">
     <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">{{ _('Rank') }}</label>
-    <select name="rank" class="input-field cursor-pointer appearance-auto">
+    <select name="rank" class="input-field cursor-pointer">
       <option value="">{{ _('All Ranks') }}</option>
       {% for r in ranks %}<option value="{{ r.rank_code }}" {% if r.rank_code==sel_rank %}selected{% endif %}>{{ r.rank_code }}</option>{% endfor %}
     </select>
   </div>
   <div class="flex-1 w-full">
     <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">{{ _('Specialty') }}</label>
-    <select name="spec" class="input-field cursor-pointer appearance-auto">
+    <select name="spec" class="input-field cursor-pointer">
       <option value="">{{ _('All Specialties') }}</option>
       {% for s in specs %}<option value="{{ s.spec_code }}" {% if s.spec_code==sel_spec %}selected{% endif %}>{{ s.spec_code }}</option>{% endfor %}
     </select>
   </div>
-  <button class="btn whitespace-nowrap h-11 px-8 shadow-sm" type="submit">{{ _('Apply Filter') }}</button>
+  <button class="btn btn-primary whitespace-nowrap h-11 px-8" type="submit">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
+    {{ _('Apply Filter') }}
+  </button>
 </form>
 
-<div class="card overflow-x-auto border border-slate-200">
-  <table class="w-full text-left border-collapse">
+<div class="card overflow-x-auto">
+  <table class="w-full text-left">
     <thead>
       <tr>
         <th>{{ _('Identification') }}</th>
@@ -39,21 +47,22 @@
         <th>{{ _('Specialties') }}</th>
       </tr>
     </thead>
-    <tbody class="divide-y divide-slate-100">
+    <tbody>
       {% for row in rows %}
-      <tr class="hover:bg-slate-50/80 transition-colors">
+      <tr>
         <td class="font-mono text-sm text-slate-500">{{ row.person_id }}</td>
         <td class="font-semibold text-slate-900">{{ row.name }}</td>
-        <td><span class="chip">{{ row.rank_code }}</span></td>
+        <td><span class="chip chip-blue">{{ row.rank_code }}</span></td>
         <td class="text-slate-700">{{ row.station_en }}</td>
         <td>
-          <span class="font-medium text-slate-700">{{ row.years_of_service if row.years_of_service is not none else 'N/A' }}</span>
+          <span class="font-semibold text-slate-700">{{ row.years_of_service if row.years_of_service is not none else 'N/A' }}</span>
+          {% if row.years_of_service %}<span class="text-xs text-slate-400 ml-1">{{ _('yrs') }}</span>{% endif %}
         </td>
         <td>
           {% if row.awards_count > 0 %}
-          <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-100 text-amber-700 text-xs font-bold">{{ row.awards_count }}</span>
+          <span class="inline-flex items-center justify-center min-w-[1.5rem] h-6 px-1.5 rounded-full bg-amber-100 text-amber-700 text-xs font-extrabold">{{ row.awards_count }}</span>
           {% else %}
-          <span class="text-slate-400">0</span>
+          <span class="text-slate-300 font-medium">—</span>
           {% endif %}
         </td>
         <td class="text-xs text-slate-500 max-w-xs truncate" title="{{ (row.specializations or []) | join(', ') }}">
@@ -64,8 +73,11 @@
     </tbody>
   </table>
   {% if rows|length == 0 %}
-  <div class="p-8 text-center text-slate-500">
-    {{ _('No personnel match the selected filters.') }}
+  <div class="p-12 text-center">
+    <div class="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+      <svg class="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>
+    </div>
+    <p class="text-slate-500 font-medium">{{ _('No personnel match the selected filters.') }}</p>
   </div>
   {% endif %}
 </div>

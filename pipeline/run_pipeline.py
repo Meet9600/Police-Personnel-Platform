@@ -294,6 +294,7 @@ def main():
     load_postings(cur, "services_periods_emp", "employee_details_id", "E")
     print("[6/7] performance ...");           load_performance(cur)
     print("[7/7] station capacity ...");      load_capacity(cur)
+    
     conn.commit()
     cur.close(); conn.close()
     print("Pipeline complete.")

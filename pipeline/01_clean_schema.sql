@@ -97,6 +97,7 @@ CREATE TABLE IF NOT EXISTS clean.person (
 
     UNIQUE (source_table, source_id)
 );
+
 CREATE INDEX IF NOT EXISTS ix_person_rank   ON clean.person(rank_code);
 CREATE INDEX IF NOT EXISTS ix_person_station ON clean.person(current_station_id);
 
