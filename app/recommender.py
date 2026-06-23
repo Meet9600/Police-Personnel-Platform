@@ -253,7 +253,7 @@ def recommend_team(station_ids, division_ids, needed_specs, team_size, rank_mix=
                 "rank": m["person"]["rank_code"],
                 "score": m["score"],
                 "why": "; ".join(m["reasons"]),
-            } for m in sorted(chosen, key=lambda x: -x["score"])
+            } for m in sorted(chosen, key=lambda x: (-x["person"]["rank_order"], -x["score"]))
         ],
         "team_rationale": {
             "skill_coverage_pct": round(coverage_pct, 1),
