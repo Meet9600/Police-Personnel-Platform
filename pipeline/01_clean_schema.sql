@@ -156,6 +156,8 @@ CREATE TABLE IF NOT EXISTS clean.station_capacity (
 -- FLAT ML FEATURE VIEW  ("one tabular form" deliverable)
 -- This is what the recommendation engine and analytics read from.
 -- ---------------------------------------------------------------------------
+DROP VIEW IF EXISTS clean.vw_ml_features CASCADE;
+
 CREATE OR REPLACE VIEW clean.vw_ml_features AS
 SELECT
     p.person_id,

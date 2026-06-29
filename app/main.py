@@ -21,6 +21,7 @@ from flask import (Flask, render_template, request, redirect, url_for,
                    session, flash, g, jsonify)
 from flask_babel import Babel, gettext as _
 from werkzeug.security import check_password_hash, generate_password_hash
+from flask_wtf.csrf import CSRFProtect, CSRFError
 
 from app.config import Config, query
 from app.recommender import recommend_team
@@ -40,6 +41,12 @@ def create_app():
     app.config["BABEL_TRANSLATION_DIRECTORIES"] = os.path.join(
         os.path.dirname(os.path.abspath(__file__)), "translations")
     Babel(app, locale_selector=select_locale)
+    csrf = CSRFProtect(app)
+
+    @app.errorhandler(CSRFError)
+    def handle_csrf_error(e):
+        flash(_("Your session expired. Please try submitting again."), "error")
+        return redirect(request.referrer or url_for("dashboard"))
 
     # ---- helpers ----
     def login_required(view):
@@ -175,6 +182,7 @@ def create_app():
 
     @app.route("/api/ask", methods=["POST"])
     @login_required
+    @csrf.exempt
     def api_ask():
         data = request.get_json(silent=True) or {}
         q = (data.get("question") or "").strip()
@@ -197,7 +205,6 @@ def create_app():
             JOIN clean.person p ON p.person_id = v.person_id
             WHERE {where}
             ORDER BY v.rank_order DESC, v.person_id
-            LIMIT 300
         """
         if rank:
             where.append("v.rank_code = %s"); params.append(rank)
@@ -224,4 +231,4 @@ def _users_table_exists():
 app = create_app()
 
 if __name__ == "__main__":
-    app.run(host="127.0.0.1", port=5001, debug=False)
+    app.run(host="127.0.0.1", port=5001, debug=os.environ.get("FLASK_DEBUG", "0") == "1")

@@ -1,5 +1,6 @@
 Flask>=3.0
 Flask-Babel>=4.0
+Flask-WTF>=1.2
 psycopg2-binary>=2.9
 Werkzeug>=3.0
 Babel>=2.12

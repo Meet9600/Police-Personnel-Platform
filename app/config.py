@@ -5,11 +5,16 @@ All DB access for the app + NLP goes through here. Two roles are supported:
   * default (read/write) — used by the pipeline only.
   * read-only — used by the NLP executor, so a parsed query can NEVER mutate data.
 
+Connections are served from a ThreadedConnectionPool so we don't open a fresh
+Postgres socket on every request.
+
 No secrets in code; everything via environment variables.
 """
 import os
+import threading
 import psycopg2
 import psycopg2.extras
+import psycopg2.pool
 from contextlib import contextmanager
 
 
@@ -39,10 +44,32 @@ def _conn_kwargs(read_only=False):
     return kw
 
 
+# ---- Connection pools (lazy-init, one per role) ----------------------------
+_pools = {}
+_pool_lock = threading.Lock()
+
+# Pool size: 1–10 connections. Adjust for production if needed.
+_POOL_MIN = 1
+_POOL_MAX = 10
+
+
+def _get_pool(read_only=False):
+    """Return (or create) the connection pool for the given role."""
+    key = "ro" if read_only else "rw"
+    if key not in _pools:
+        with _pool_lock:
+            if key not in _pools:  # double-checked locking
+                _pools[key] = psycopg2.pool.ThreadedConnectionPool(
+                    _POOL_MIN, _POOL_MAX, **_conn_kwargs(read_only)
+                )
+    return _pools[key]
+
+
 @contextmanager
 def get_conn(read_only=False):
-    """Context-managed connection. read_only=True opens a read-only transaction."""
-    conn = psycopg2.connect(**_conn_kwargs(read_only))
+    """Context-managed pooled connection. read_only=True opens a read-only transaction."""
+    pool = _get_pool(read_only)
+    conn = pool.getconn()
     try:
         if read_only:
             conn.set_session(readonly=True, autocommit=False)
@@ -53,7 +80,7 @@ def get_conn(read_only=False):
         conn.rollback()
         raise
     finally:
-        conn.close()
+        pool.putconn(conn)
 
 
 def query(sql, params=None, read_only=True):
@@ -64,3 +91,4 @@ def query(sql, params=None, read_only=True):
         rows = [dict(r) for r in cur.fetchall()]
         cur.close()
         return rows
+

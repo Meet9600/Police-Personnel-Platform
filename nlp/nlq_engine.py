@@ -157,10 +157,17 @@ class NLQEngine:
     # ----- entity resolution (safe: maps text -> known ids/codes) -----
     # Common transliterations to help English queries match Gujarati database strings
     PLACE_ALIASES = {
+        # Core aliases
         "aslali": "અસલાલી", "sanand": "સાણંદ", "viramgam": "વિરમગામ",
         "dholka": "ધોળકા", "dhandhuka": "ધંધુકા", "bopal": "બોપલ",
         "mandal": "માંડલ", "detroj": "ડેટરોજ", "bavla": "બાવળા",
         "kanbha": "કણભા", "changodar": "ચાંગોદર",
+        # Extreme transliteration misspellings mapping to correct English
+        "sannad": "sanand", "sanad": "sanan", "saanand": "sanand",
+        "bopl": "bopal", "boopal": "bopal",
+        "virmgam": "viramgam", "viramgaam": "viramgam",
+        "ahmedabad": "ahmedabad", "ahmdabad": "ahmedabad", "amdavad": "ahmedabad",
+        "dolka": "dholka", "dholkaa": "dholka",
     }
 
     def _apply_aliases(self, text):
@@ -194,11 +201,11 @@ class NLQEngine:
                     best_station = s
                     continue
 
-            # 2. Fuzzy match word by word (typo tolerance)
+            # 2. Fuzzy match word by word (extreme typo tolerance)
             for t_word in stemmed_tokens:
                 for v_word in vocab_tokens_en + vocab_tokens_gu:
                     sim = _similarity(t_word, v_word)
-                    if sim > 0.85:
+                    if sim > 0.70:
                         score = sim
                         if score > best_score:
                             best_score = score
@@ -235,7 +242,7 @@ class NLQEngine:
             for t_word in stemmed_tokens:
                 for v_word in vocab_tokens_en + vocab_tokens_gu:
                     sim = _similarity(t_word, v_word)
-                    if sim > 0.85:
+                    if sim > 0.70:
                         score = sim
                         if score > best_score:
                             best_score = score
@@ -302,28 +309,71 @@ class NLQEngine:
         tokens = _tokenize(text)
         stemmed_tokens = _stem_tokens(tokens)
 
-        # Specialization mappings as tokenized lists
+        # Specialization mappings as tokenized lists (Massive Semantic Expansion)
         spec_mapping = {
-            "CYBER": [["cyber"], ["સાઇબર"], ["સાયબર"], ["cyber", "crime"]],
-            "TRAFFIC": [["traffic"], ["ટ્રાફિક"]],
-            "CRIME_INVEST": [["crime"], ["investigation"], ["ક્રાઈમ"], ["તપાસ"]],
-            "WOMEN_SAFETY": [["she", "team"], ["women", "safety"], ["female", "safety"], ["મહિલા", "સુરક્ષા"], ["શી", "ટીમ"], ["બહેનો", "સુરક્ષા"]],
-            "CHILD_WELFARE": [["child"], ["child", "welfare"], ["spc"], ["બાળ", "કલ્યાણ"], ["ચાઇલ્ડ", "વેલફેર"]],
-            "COURT_LEGAL": [["court"], ["summons"], ["warrant"], ["કોર્ટ"], ["સમન્સ"], ["વોરંટ"]],
-            "DRIVER": [["driver"], ["ડ્રાઈવર"]],
-            "IT_COMPUTER": [["computer"], ["it"], ["કોમ્પ્યુટર"], ["કમ્પ્યુટર"]],
-            "CONTROL_ROOM": [["control"], ["wireless"], ["કંટ્રોલ"], ["વાયરલેસ"]],
-            "SOG": [["sog"], ["special", "operations"], ["એસઓજી"]],
-            "COMMANDO": [["commando"], ["gunman"], ["કમાન્ડો"], ["ગનમેન"]],
-            "DOG_SQUAD": [["dog"], ["dog", "squad"], ["ડોગ"], ["ડોગ", "સ્ક્વોડ"]],
-            "ARMOURY": [["armoury"], ["armory"], ["આર્મોરી"], ["હથિયાર"]],
-            "GUARD_SECURITY": [["guard"], ["security"], ["ગાર્ડ"], ["સુરક્ષા"]],
-            "VIP_PROTECTION": [["vip"], ["bungalow"], ["બંગલો"]],
-            "ACCOUNTS": [["accounts"], ["એકાઉન્ટ"], ["હિસાબ"]],
-            "PATROL_MOBILE": [["patrol"], ["mobile", "patrol"], ["પેટ્રોલ"], ["મોબાઈલ", "પેટ્રોલ"]],
-            "PSO": [["pso"], ["પીએસઓ"]],
-            "REGISTRY": [["registry"], ["રજીસ્ટ્રી"]],
-            "STORE": [["store"], ["સ્ટોર"]],
+            "CYBER": [
+                ["cyber"], ["સાઇબર"], ["સાયબર"], ["cyber", "crime"],
+                ["hacker"], ["hacking"], ["phishing"], ["online", "fraud"], ["internet"], ["સોશિયલ", "મીડિયા"], ["ઇન્ટરનેટ"]
+            ],
+            "TRAFFIC": [
+                ["traffic"], ["ટ્રાફિક"], ["accident"], ["highway"], ["road"], ["અકસ્માત"], ["રસ્તો"]
+            ],
+            "CRIME_INVEST": [
+                ["crime"], ["investigation"], ["ક્રાઈમ"], ["તપાસ"],
+                ["murder"], ["theft"], ["robbery"], ["stolen"], ["killer"], ["homicide"], ["ખૂન"], ["ચોરી"], ["લૂંટ"], ["ગુનો"]
+            ],
+            "WOMEN_SAFETY": [
+                ["she", "team"], ["women", "safety"], ["female", "safety"], ["મહિલા", "સુરક્ષા"], ["શી", "ટીમ"], ["બહેનો", "સુરક્ષા"],
+                ["harassment"], ["domestic", "violence"], ["છેડતી"]
+            ],
+            "CHILD_WELFARE": [
+                ["child"], ["child", "welfare"], ["spc"], ["બાળ", "કલ્યાણ"], ["ચાઇલ્ડ", "વેલફેર"], ["kid"], ["minor"], ["બાળક"]
+            ],
+            "COURT_LEGAL": [
+                ["court"], ["summons"], ["warrant"], ["કોર્ટ"], ["સમન્સ"], ["વોરંટ"], ["legal"], ["lawyer"], ["judge"], ["કાયદો"]
+            ],
+            "DRIVER": [
+                ["driver"], ["ડ્રાઈવર"], ["driving"], ["car"], ["vehicle"], ["ગાડી"], ["વાહન"]
+            ],
+            "IT_COMPUTER": [
+                ["computer"], ["it"], ["કોમ્પ્યુટર"], ["કમ્પ્યુટર"], ["software"], ["hardware"], ["typist"], ["સોફ્ટવેર"]
+            ],
+            "CONTROL_ROOM": [
+                ["control"], ["wireless"], ["કંટ્રોલ"], ["વાયરલેસ"], ["radio"], ["dispatch"], ["રેડિયો"]
+            ],
+            "SOG": [
+                ["sog"], ["special", "operations"], ["એસઓજી"], ["anti", "terror"], ["special", "force"]
+            ],
+            "COMMANDO": [
+                ["commando"], ["gunman"], ["કમાન્ડો"], ["ગનમેન"], ["shooter"], ["sniper"], ["હથિયારધારી"]
+            ],
+            "DOG_SQUAD": [
+                ["dog"], ["dog", "squad"], ["ડોગ"], ["ડોગ", "સ્ક્વોડ"], ["k9"], ["sniffer"]
+            ],
+            "ARMOURY": [
+                ["armoury"], ["armory"], ["આર્મોરી"], ["હથિયાર"], ["weapons"], ["guns"], ["દારૂગોળો"]
+            ],
+            "GUARD_SECURITY": [
+                ["guard"], ["security"], ["ગાર્ડ"], ["સુરક્ષા"], ["watchman"], ["ચોકીદાર"]
+            ],
+            "VIP_PROTECTION": [
+                ["vip"], ["bungalow"], ["બંગલો"], ["minister", "security"], ["protection"]
+            ],
+            "ACCOUNTS": [
+                ["accounts"], ["એકાઉન્ટ"], ["હિસાબ"], ["finance"], ["salary"], ["pay"], ["પગાર"], ["નાણાં"]
+            ],
+            "PATROL_MOBILE": [
+                ["patrol"], ["mobile", "patrol"], ["પેટ્રોલ"], ["મોબાઈલ", "પેટ્રોલ"], ["beat"], ["night", "round"]
+            ],
+            "PSO": [
+                ["pso"], ["પીએસઓ"], ["station", "officer"]
+            ],
+            "REGISTRY": [
+                ["registry"], ["રજીસ્ટ્રી"], ["records"], ["files"], ["દસ્તાવેજ"]
+            ],
+            "STORE": [
+                ["store"], ["સ્ટોર"], ["inventory"], ["supplies"], ["સામાન"]
+            ],
         }
 
         all_matches = []
@@ -371,37 +421,61 @@ class NLQEngine:
         min_age = None
         max_age = None
 
+        # Advanced Range & Extreme Parsing
         if not has_age_context:
-            years_match_more = re.search(r"(?:more than|>|over)\s*(\d+)\s*(?:years?|વર્ષ)", ql)
-            if not years_match_more:
-                years_match_more = re.search(r"(\d+)\s*(?:years?|વર્ષ)(?:\s*(?:કે તેથી વધારે|કે તેથી વધુ|થી વધારે|થી વધુ|વધુ|અનુભવ|કામ))", q)
-            if not years_match_more:
-                years_match_more = re.search(r"(\d+)\+\s*(?:years?|વર્ષ)", ql)
-            if years_match_more:
-                min_years = int(years_match_more.group(1))
+            # Check for range: "between X and Y years"
+            range_match = re.search(r"(?:between|from)\s*(\d+)\s*(?:and|to|-)\s*(\d+)\s*(?:years?|વર્ષ)", ql)
+            if range_match:
+                min_years = int(range_match.group(1))
+                max_years = int(range_match.group(2))
+            else:
+                years_match_more = re.search(r"(?:more than|>|over|at least|minimum)\s*(\d+)\s*(?:years?|વર્ષ)", ql)
+                if not years_match_more:
+                    years_match_more = re.search(r"(\d+)\s*(?:years?|વર્ષ)(?:\s*(?:કે તેથી વધારે|કે તેથી વધુ|થી વધારે|થી વધુ|વધુ|અનુભવ|કામ|થી કામ|થી કામ કરતા|કામ કરતા))", q)
+                if not years_match_more:
+                    years_match_more = re.search(r"(\d+)\+\s*(?:years?|વર્ષ)", ql)
+                if years_match_more:
+                    min_years = int(years_match_more.group(1))
 
-            years_match_less = re.search(r"(?:less than|<|under)\s*(\d+)\s*(?:years?|વર્ષ)", ql)
-            if not years_match_less:
-                years_match_less = re.search(r"(\d+)\s*(?:years?|વર્ષ)(?:\s*(?:કે તેથી ઓછો|કે તેથી ઓછી|થી ઓછો|થી ઓછી|ઓછો|ઓછી))", q)
-            if years_match_less:
-                max_years = int(years_match_less.group(1))
+                years_match_less = re.search(r"(?:less than|<|under|at most|maximum)\s*(\d+)\s*(?:years?|વર્ષ)", ql)
+                if not years_match_less:
+                    years_match_less = re.search(r"(\d+)\s*(?:years?|વર્ષ)(?:\s*(?:કે તેથી ઓછો|કે તેથી ઓછી|થી ઓછો|થી ઓછી|ઓછો|ઓછી))", q)
+                if years_match_less:
+                    max_years = int(years_match_less.group(1))
+                
+                # Extreme modifiers (most experienced / newest)
+                if any(k in ql for k in ["most experienced", "longest serving", "senior most", "સૌથી વધુ અનુભવી", "સૌથી જુના"]):
+                    min_years = 15 # Heuristic for highly experienced
+                elif any(k in ql for k in ["newest", "least experienced", "fresh", "સૌથી નવા", "સૌથી ઓછો અનુભવી"]):
+                    max_years = 2 # Heuristic for very new
         
         else:
-            age_under = re.search(r"(?:under|<|younger than)\s*(\d+)\s*(?:years?|વર્ષ)", ql)
-            if not age_under:
-                age_under = re.search(r"(\d+)\s*(?:years?|વર્ષ)થી\s*(?:નાની|નાનો|ઓછી|ઓછો)", q)
-            if not age_under:
-                age_under = re.search(r"(\d+)\s*(?:વર્ષ)\s*(?:થી ઓછી ઉંમર|થી નાની ઉંમર)", q)
-            if age_under:
-                max_age = int(age_under.group(1))
+            range_match = re.search(r"(?:between|from)\s*(\d+)\s*(?:and|to|-)\s*(\d+)\s*(?:years?|વર્ષ)", ql)
+            if range_match:
+                min_age = int(range_match.group(1))
+                max_age = int(range_match.group(2))
+            else:
+                age_under = re.search(r"(?:under|<|younger than|below|at most)\s*(\d+)\s*(?:years?|વર્ષ)", ql)
+                if not age_under:
+                    age_under = re.search(r"(\d+)\s*(?:years?|વર્ષ)થી\s*(?:નાની|નાનો|ઓછી|ઓછો)", q)
+                if not age_under:
+                    age_under = re.search(r"(\d+)\s*(?:વર્ષ)\s*(?:થી ઓછી ઉંમર|થી નાની ઉંમર)", q)
+                if age_under:
+                    max_age = int(age_under.group(1))
 
-            age_over = re.search(r"(?:over|>|older than)\s*(\d+)\s*(?:years?|વર્ષ)", ql)
-            if not age_over:
-                age_over = re.search(r"(\d+)\s*(?:years?|વર્ષ)થી\s*(?:મોટી|મોટો|વધુ|વધારે)", q)
-            if not age_over:
-                age_over = re.search(r"(\d+)\s*(?:વર્ષ)\s*(?:થી વધુ ઉંમર|થી મોટી ઉંમર)", q)
-            if age_over:
-                min_age = int(age_over.group(1))
+                age_over = re.search(r"(?:over|>|older than|above|at least)\s*(\d+)\s*(?:years?|વર્ષ)", ql)
+                if not age_over:
+                    age_over = re.search(r"(\d+)\s*(?:years?|વર્ષ)થી\s*(?:મોટી|મોટો|વધુ|વધારે)", q)
+                if not age_over:
+                    age_over = re.search(r"(\d+)\s*(?:વર્ષ)\s*(?:થી વધુ ઉંમર|થી મોટી ઉંમર)", q)
+                if age_over:
+                    min_age = int(age_over.group(1))
+                
+                # Extreme modifiers (youngest / oldest)
+                if any(k in ql for k in ["youngest", "સૌથી નાની", "સૌથી નાનો"]):
+                    max_age = 28 # Heuristic for youngest
+                elif any(k in ql for k in ["oldest", "સૌથી મોટી", "સૌથી મોટો"]):
+                    min_age = 50 # Heuristic for oldest
 
         # 2. Gender extraction (plurals/stemmed compatible whole tokens)
         gender = None
@@ -432,10 +506,10 @@ class NLQEngine:
                 break
 
         # 4. Semantic trigger keywords
-        count_kws = ["how many", "count", "number of", "total", "quantity", "sum", "કેટલા", "કેટલી", "કેટલો", "કુલ સંખ્યા", "સંખ્યા", "ગણતરી"]
-        list_kws = ["list", "show", "which", "who", "name", "get", "find", "display", "officer", "personnel", "all", "detail", "યાદી", "કોણ", "શોધો", "બતાવો", "બધા", "લિસ્ટ", "કર્મચારી", "અધિકારી", "નામ"]
-        award_kws = ["award", "top", "best", "highest", "medal", "reward", "honored", "honoured", "ઇનામ", "ઈનામ", "એવોર્ડ", "મેડલ", "પુરસ્કાર", "ઉત્કૃષ્ટ"]
-        vacancy_kws = ["vacancy", "vacant", "shortage", "empty", "need", "lack", "ખાલી", "જગ્યા", "ઘટ", "અછત"]
+        count_kws = ["how many", "count", "number of", "total", "quantity", "sum", "કેટલા", "કેટલી", "કેટલો", "કુલ સંખ્યા", "સંખ્યા", "ગણતરી", "ત્યાં કેટલા છે"]
+        list_kws = ["list", "show", "which", "who", "name", "get", "find", "display", "officer", "personnel", "all", "detail", "યાદી", "કોણ", "શોધો", "બતાવો", "બધા", "લિસ્ટ", "કર્મચારી", "અધિકારી", "નામ", "માહિતી આપો"]
+        award_kws = ["award", "top", "best", "highest", "medal", "reward", "honored", "honoured", "ઇનામ", "ઈનામ", "એવોર્ડ", "મેડલ", "પુરસ્કાર", "ઉત્કૃષ્ટ", "સૌથી વધુ સન્માનિત"]
+        vacancy_kws = ["vacancy", "vacant", "shortage", "empty", "need", "lack", "ખાલી", "જગ્યા", "ઘટ", "અછત", "જરૂરિયાત", "ખાલી જગ્યાઓ"]
 
         norm_count_kws = [_normalize_guj(_lower(k)) for k in count_kws]
         norm_list_kws = [_normalize_guj(_lower(k)) for k in list_kws]
@@ -593,7 +667,7 @@ class NLQEngine:
             columns=["count"], rows=rows, sql_label="count_personnel",
         )
 
-    def _q_list(self, rank, spec, station, division, filters=None):
+    def _q_list(self, rank, spec, station, division, filters=None, is_past_posting=False):
         where, params, desc = ["p.is_active"], [], []
         joins = ["LEFT JOIN clean.dim_station s ON s.station_id = p.current_station_id"]
         if spec:
@@ -601,12 +675,30 @@ class NLQEngine:
             where.append("ps.spec_code = %s"); params.append(spec); desc.append(f"skill {spec}")
         if rank:
             where.append("p.rank_code = %s"); params.append(rank); desc.append(f"rank {rank}")
+        
         if station:
-            where.append("p.current_station_id = %s"); params.append(station["station_id"])
-            desc.append(f"at {station['name_en']}")
+            if is_past_posting:
+                joins.append("JOIN clean.person_posting_history pph ON pph.person_id = p.person_id")
+                where.append("(pph.place_en ILIKE %s OR pph.place_raw ILIKE %s)"); 
+                params.extend([f"%{station['name_en']}%", f"%{station['name_en']}%"])
+                where.append("p.current_station_id != %s"); params.append(station["station_id"])
+                desc.append(f"transferred from {station['name_en']}")
+            else:
+                where.append("p.current_station_id = %s"); params.append(station["station_id"])
+                desc.append(f"at {station['name_en']}")
+                
         if division:
-            where.append("s.division_id = %s"); params.append(division["division_id"])
-            desc.append(f"in {division['name_en']} division")
+            if is_past_posting:
+                if not station: # Only join if not already joined
+                    joins.append("JOIN clean.person_posting_history pph ON pph.person_id = p.person_id")
+                where.append("(pph.place_en ILIKE %s OR pph.place_raw ILIKE %s)"); 
+                params.extend([f"%{division['name_en']}%", f"%{division['name_en']}%"])
+                where.append("s.division_id != %s"); params.append(division["division_id"])
+                desc.append(f"transferred from {division['name_en']} division")
+            else:
+                where.append("s.division_id = %s"); params.append(division["division_id"])
+                desc.append(f"in {division['name_en']} division")
+                
         self._apply_filters(filters, joins, where, params, desc)
         
         sql = f"""

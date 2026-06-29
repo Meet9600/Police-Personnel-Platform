@@ -18,9 +18,9 @@ A clustering layer can be added later once labelled outcomes exist.
 
 Pure local Postgres. No external calls.
 """
-import os
-import psycopg2
 import psycopg2.extras
+
+from app.config import get_conn
 
 # ---- Scoring weights (sum the component scores; specialization dominates) ----
 W_SPEC      = 60.0   # fraction of requested specializations this person covers
@@ -34,17 +34,9 @@ EXPERIENCE_CAP_YEARS = 25.0
 AWARDS_CAP = 3
 
 
-def connect():
-    return psycopg2.connect(
-        host=os.environ.get("PGHOST", "/tmp/pgrun"),
-        port=os.environ.get("PGPORT", "5433"),
-        dbname=os.environ.get("PGDATABASE", "police_management"),
-        user=os.environ.get("PGUSER", "postgres"),
-    )
-
-
-def fetch_station_candidates(cur, station_ids=None, division_ids=None):
+def fetch_station_candidates(conn, station_ids=None, division_ids=None):
     """All active personnel at the selected stations/divisions, with features + specialization set."""
+    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
     cur.execute("""
         SELECT p.person_id, p.full_name_gu, p.rank_code, r.rank_band, r.rank_order,
                p.years_of_service, p.age_years,
@@ -69,6 +61,7 @@ def fetch_station_candidates(cur, station_ids=None, division_ids=None):
         d = dict(row)
         d["specs"] = set(d["specs"] or [])
         out.append(d)
+    cur.close()
     return out
 
 
@@ -126,19 +119,18 @@ def recommend_team(station_ids, division_ids, needed_specs, team_size, rank_mix=
     """
     station_ids = station_ids or []
     division_ids = division_ids or []
-    conn = connect(); cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    candidates = fetch_station_candidates(cur, station_ids=station_ids, division_ids=division_ids)
-    
-    target_names = []
-    if station_ids:
-        cur.execute("SELECT name_en FROM clean.dim_station WHERE station_id = ANY(%s)", (station_ids,))
-        target_names.extend([r["name_en"] for r in cur.fetchall()])
-    if division_ids:
-        cur.execute("SELECT name_en FROM clean.dim_division WHERE division_id = ANY(%s)", (division_ids,))
-        target_names.extend([f"{r['name_en']} Division" for r in cur.fetchall()])
-    
-    target_name = ", ".join(target_names) if target_names else "All Stations"
-    cur.close(); conn.close()
+    with get_conn(read_only=True) as conn:
+        candidates = fetch_station_candidates(conn, station_ids=station_ids, division_ids=division_ids)
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        target_names = []
+        if station_ids:
+            cur.execute("SELECT name_en FROM clean.dim_station WHERE station_id = ANY(%s)", (station_ids,))
+            target_names.extend([r["name_en"] for r in cur.fetchall()])
+        if division_ids:
+            cur.execute("SELECT name_en FROM clean.dim_division WHERE division_id = ANY(%s)", (division_ids,))
+            target_names.extend([f"{r['name_en']} Division" for r in cur.fetchall()])
+        target_name = ", ".join(target_names) if target_names else "All Stations"
+        cur.close()
 
     if not candidates:
         return {"error": f"No active personnel found at {target_name}."}
@@ -208,38 +200,39 @@ def recommend_team(station_ids, division_ids, needed_specs, team_size, rank_mix=
     #     (informational only — not auto-pulled into the team).
     division_suggestions = []
     if missing and (station_ids or division_ids):
-        conn2 = connect(); c2 = conn2.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        if station_ids:
-            c2.execute("""
-                SELECT p.person_id, p.full_name_gu AS name, p.rank_code AS rank,
-                       s.name_en AS station, ps.spec_code
-                FROM clean.person p
-                JOIN clean.dim_station s ON s.station_id = p.current_station_id
-                JOIN clean.person_specialization ps ON ps.person_id = p.person_id
-                WHERE s.division_id IN (SELECT division_id FROM clean.dim_station WHERE station_id = ANY(%(st)s))
-                  AND NOT (p.current_station_id = ANY(%(st)s))
-                  AND ps.spec_code = ANY(%(specs)s)
-                  AND p.is_active
-                ORDER BY ps.spec_code, p.rank_code
-                LIMIT 30
-            """, {"st": station_ids, "specs": list(missing)})
-        else:
-            # If selecting entire divisions, suggest from other divisions
-            c2.execute("""
-                SELECT p.person_id, p.full_name_gu AS name, p.rank_code AS rank,
-                       s.name_en AS station, ps.spec_code
-                FROM clean.person p
-                JOIN clean.dim_station s ON s.station_id = p.current_station_id
-                JOIN clean.person_specialization ps ON ps.person_id = p.person_id
-                WHERE NOT (s.division_id = ANY(%(div)s))
-                  AND ps.spec_code = ANY(%(specs)s)
-                  AND p.is_active
-                ORDER BY ps.spec_code, p.rank_code
-                LIMIT 30
-            """, {"div": division_ids, "specs": list(missing)})
-        for row in c2.fetchall():
-            division_suggestions.append(dict(row))
-        c2.close(); conn2.close()
+        with get_conn(read_only=True) as conn2:
+            c2 = conn2.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+            if station_ids:
+                c2.execute("""
+                    SELECT p.person_id, p.full_name_gu AS name, p.rank_code AS rank,
+                           s.name_en AS station, ps.spec_code
+                    FROM clean.person p
+                    JOIN clean.dim_station s ON s.station_id = p.current_station_id
+                    JOIN clean.person_specialization ps ON ps.person_id = p.person_id
+                    WHERE s.division_id IN (SELECT division_id FROM clean.dim_station WHERE station_id = ANY(%(st)s))
+                      AND NOT (p.current_station_id = ANY(%(st)s))
+                      AND ps.spec_code = ANY(%(specs)s)
+                      AND p.is_active
+                    ORDER BY ps.spec_code, p.rank_code
+                    LIMIT 30
+                """, {"st": station_ids, "specs": list(missing)})
+            else:
+                # If selecting entire divisions, suggest from other divisions
+                c2.execute("""
+                    SELECT p.person_id, p.full_name_gu AS name, p.rank_code AS rank,
+                           s.name_en AS station, ps.spec_code
+                    FROM clean.person p
+                    JOIN clean.dim_station s ON s.station_id = p.current_station_id
+                    JOIN clean.person_specialization ps ON ps.person_id = p.person_id
+                    WHERE NOT (s.division_id = ANY(%(div)s))
+                      AND ps.spec_code = ANY(%(specs)s)
+                      AND p.is_active
+                    ORDER BY ps.spec_code, p.rank_code
+                    LIMIT 30
+                """, {"div": division_ids, "specs": list(missing)})
+            for row in c2.fetchall():
+                division_suggestions.append(dict(row))
+            c2.close()
 
     return {
         "station": target_name,
@@ -277,8 +270,8 @@ if __name__ == "__main__":
     import json
     # Example: cyber-crime case at station 37, want 4 people incl. 1 PI lead.
     result = recommend_team(
-        station_id=37,
-        division_id=None,
+        station_ids=[37],
+        division_ids=None,
         needed_specs={"CYBER", "CRIME_INVEST", "IT_COMPUTER"},
         team_size=4,
         rank_mix={"PI": 1},

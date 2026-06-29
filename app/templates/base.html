@@ -26,6 +26,7 @@
       body { background-color: white !important; color: black !important; }
       .print-hidden { display: none !important; }
       .print-block { display: block !important; }
+      .pdf-print-only { display: block !important; }
       .gp-header { display: none !important; }
       .card { box-shadow: none !important; border: 1px solid #e2e8f0 !important; break-inside: avoid; margin-bottom: 20px; }
       table { width: 100% !important; }
@@ -105,6 +106,7 @@
   </header>
 
   <main class="flex-grow w-full max-w-7xl mx-auto px-5 sm:px-6 py-8 sm:py-10">
+    {% block flash_messages %}
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% for category, message in messages %}
         <div class="flash {{ category }}">
@@ -119,6 +121,7 @@
         </div>
       {% endfor %}
     {% endwith %}
+    {% endblock %}
     {% block content %}{% endblock %}
   </main>
 
