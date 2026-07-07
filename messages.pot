@@ -1,0 +1,636 @@
+# Translations template for PROJECT.
+# Copyright (C) 2026 ORGANIZATION
+# This file is distributed under the same license as the PROJECT project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2026-07-06 15:51+0530\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: app/main.py:49
+msgid "Your session expired. Please try submitting again."
+msgstr ""
+
+#: app/main.py:91
+msgid "Invalid username or password."
+msgstr ""
+
+#: app/main.py:191
+msgid "Please complete the form correctly."
+msgstr ""
+
+#: app/main.py:270
+msgid "Personnel not found."
+msgstr ""
+
+#: app/templates/ask.html:2 app/templates/ask.html:10
+#: app/templates/base.html:64 app/templates/base.html:100
+msgid "Smart Search"
+msgstr ""
+
+#: app/templates/ask.html:9
+msgid "Natural Language Interface"
+msgstr ""
+
+#: app/templates/ask.html:12
+msgid ""
+"Extract intelligence directly from the secure local database using plain "
+"text questions. No data leaves the server."
+msgstr ""
+
+#: app/templates/ask.html:23
+msgid "e.g. How many PSIs are stationed at Sanand? Or list all cyber officers."
+msgstr ""
+
+#: app/templates/ask.html:26
+msgid "Execute Search"
+msgstr ""
+
+#: app/templates/ask.html:30
+msgid "Try:"
+msgstr ""
+
+#: app/templates/ask.html:31
+msgid "How many ASIs in Ahmedabad?"
+msgstr ""
+
+#: app/templates/ask.html:32
+msgid "List cyber specialists"
+msgstr ""
+
+#: app/templates/ask.html:33
+msgid "Officers with 10+ years service"
+msgstr ""
+
+#: app/templates/ask.html:44
+msgid "Query Rejected"
+msgstr ""
+
+#: app/templates/ask.html:52
+msgid "Print / Save PDF"
+msgstr ""
+
+#: app/templates/ask.html:71
+msgid "Template Executed"
+msgstr ""
+
+#: app/templates/ask.html:95
+msgid "Results extracted successfully"
+msgstr ""
+
+#: app/templates/ask.html:96 app/templates/personnel.html:12
+msgid "records"
+msgstr ""
+
+#: app/templates/ask.html:103
+msgid "The query executed successfully but returned no records."
+msgstr ""
+
+#: app/templates/base.html:6 app/templates/base.html:47
+msgid "Police Personnel Platform"
+msgstr ""
+
+#: app/templates/base.html:48
+msgid "District SP Office"
+msgstr ""
+
+#: app/templates/base.html:56 app/templates/base.html:98
+msgid "Dashboard"
+msgstr ""
+
+#: app/templates/base.html:60 app/templates/base.html:99
+msgid "Build Team"
+msgstr ""
+
+#: app/templates/base.html:68 app/templates/base.html:101
+msgid "Directory"
+msgstr ""
+
+#: app/templates/base.html:87 app/templates/base.html:102
+msgid "Sign out"
+msgstr ""
+
+#: app/templates/base.html:130
+msgid "Secure On-Premise System. Data is isolated to the local district network."
+msgstr ""
+
+#: app/templates/base.html:133
+msgid "Offline AI · Encrypted"
+msgstr ""
+
+#: app/templates/dashboard.html:2 app/templates/dashboard.html:6
+msgid "Command Dashboard"
+msgstr ""
+
+#: app/templates/dashboard.html:5
+msgid "Operations Center"
+msgstr ""
+
+#: app/templates/dashboard.html:7
+msgid "Real-time insights across district personnel."
+msgstr ""
+
+#: app/templates/dashboard.html:13
+msgid "System Operational"
+msgstr ""
+
+#: app/templates/dashboard.html:17
+msgid "On-Premise Database Connected"
+msgstr ""
+
+#: app/templates/dashboard.html:21
+msgid "Offline AI Engine Ready"
+msgstr ""
+
+#: app/templates/dashboard.html:30
+msgid "Total Strength"
+msgstr ""
+
+#: app/templates/dashboard.html:37
+msgid "Active Officers"
+msgstr ""
+
+#: app/templates/dashboard.html:44
+msgid "Support Staff"
+msgstr ""
+
+#: app/templates/dashboard.html:51
+msgid "Stations"
+msgstr ""
+
+#: app/templates/dashboard.html:58
+msgid "Divisions"
+msgstr ""
+
+#: app/templates/dashboard.html:66
+msgid "Personnel by Division"
+msgstr ""
+
+#: app/templates/dashboard.html:72
+msgid "Force Breakdown by Rank"
+msgstr ""
+
+#: app/templates/dashboard.html:79
+msgid "Intelligence Tools"
+msgstr ""
+
+#: app/templates/dashboard.html:80
+msgid "Quick Actions"
+msgstr ""
+
+#: app/templates/dashboard.html:91
+msgid "Construct Team Profile"
+msgstr ""
+
+#: app/templates/dashboard.html:93
+msgid ""
+"Input specific case requirements to assemble the most capable team based "
+"on skills, rank, and availability. Includes transparent reasoning."
+msgstr ""
+
+#: app/templates/dashboard.html:106
+msgid "Query Database"
+msgstr ""
+
+#: app/templates/dashboard.html:108
+msgid ""
+"Extract specific information using natural language. Query exact "
+"headcounts, specialties, pending transfers, and operational metrics."
+msgstr ""
+
+#: app/templates/dashboard.html:141
+msgid "Personnel"
+msgstr ""
+
+#: app/templates/login.html:2 app/templates/login.html:42
+msgid "Secure Access"
+msgstr ""
+
+#: app/templates/login.html:11
+msgid "Intelligent Personnel Management"
+msgstr ""
+
+#: app/templates/login.html:14
+msgid ""
+"Intelligent team assembly, natural language queries, and secure roster "
+"management. Fully on-premise for district operations."
+msgstr ""
+
+#: app/templates/login.html:21
+msgid "End-to-end encrypted local processing"
+msgstr ""
+
+#: app/templates/login.html:27
+msgid "Offline execution with no external data transmission"
+msgstr ""
+
+#: app/templates/login.html:33
+msgid "Full audit trail for all access"
+msgstr ""
+
+#: app/templates/login.html:41
+msgid "System Online"
+msgstr ""
+
+#: app/templates/login.html:43
+msgid "District SP Office Personnel Platform"
+msgstr ""
+
+#: app/templates/login.html:64
+msgid "Officer ID"
+msgstr ""
+
+#: app/templates/login.html:66
+msgid "Enter identification"
+msgstr ""
+
+#: app/templates/login.html:70
+msgid "Passcode"
+msgstr ""
+
+#: app/templates/login.html:72
+msgid "Enter secure passcode"
+msgstr ""
+
+#: app/templates/login.html:77
+msgid "Authenticate"
+msgstr ""
+
+#: app/templates/login.html:82
+msgid "Authorized personnel only. All access is logged."
+msgstr ""
+
+#: app/templates/personnel.html:2 app/templates/personnel.html:7
+msgid "Personnel Directory"
+msgstr ""
+
+#: app/templates/personnel.html:6
+msgid "Roster Management"
+msgstr ""
+
+#: app/templates/personnel.html:8
+msgid "Complete roster of active district personnel."
+msgstr ""
+
+#: app/templates/personnel.html:19 app/templates/personnel.html:64
+#: app/templates/profile.html:10 app/templates/profile.html:88
+#: app/templates/recommend.html:145 app/templates/recommend.html:276
+msgid "Rank"
+msgstr ""
+
+#: app/templates/personnel.html:21
+msgid "All Ranks"
+msgstr ""
+
+#: app/templates/personnel.html:26 app/templates/recommend.html:145
+msgid "Specialty"
+msgstr ""
+
+#: app/templates/personnel.html:28
+msgid "All Specialties"
+msgstr ""
+
+#: app/templates/personnel.html:33
+msgid "Station"
+msgstr ""
+
+#: app/templates/personnel.html:35
+msgid "All Stations"
+msgstr ""
+
+#: app/templates/personnel.html:41
+msgid "Minimum Years of Service"
+msgstr ""
+
+#: app/templates/personnel.html:41
+msgid "Min Yrs"
+msgstr ""
+
+#: app/templates/personnel.html:45
+msgid "Maximum Years of Service"
+msgstr ""
+
+#: app/templates/personnel.html:45
+msgid "Max Yrs"
+msgstr ""
+
+#: app/templates/personnel.html:53
+msgid "Apply Filter"
+msgstr ""
+
+#: app/templates/personnel.html:62
+msgid "Identification"
+msgstr ""
+
+#: app/templates/personnel.html:63 app/templates/recommend.html:145
+msgid "Name"
+msgstr ""
+
+#: app/templates/personnel.html:65 app/templates/profile.html:38
+msgid "Current Station"
+msgstr ""
+
+#: app/templates/personnel.html:66
+msgid "Tenure"
+msgstr ""
+
+#: app/templates/personnel.html:67
+msgid "Commendations"
+msgstr ""
+
+#: app/templates/personnel.html:68
+msgid "Specialties"
+msgstr ""
+
+#: app/templates/personnel.html:84
+msgid "yrs"
+msgstr ""
+
+#: app/templates/personnel.html:105
+msgid "No personnel match the selected filters."
+msgstr ""
+
+#: app/templates/personnel.html:110
+msgid "records displayed"
+msgstr ""
+
+#: app/templates/profile.html:2
+msgid "Personnel Profile"
+msgstr ""
+
+#: app/templates/profile.html:7
+msgid "Back to Directory"
+msgstr ""
+
+#: app/templates/profile.html:19
+msgid "Personal Details"
+msgstr ""
+
+#: app/templates/profile.html:22
+msgid "Age"
+msgstr ""
+
+#: app/templates/profile.html:23 app/templates/profile.html:35
+msgid "Years"
+msgstr ""
+
+#: app/templates/profile.html:26
+msgid "Gender"
+msgstr ""
+
+#: app/templates/profile.html:27
+msgid "Male"
+msgstr ""
+
+#: app/templates/profile.html:27
+msgid "Female"
+msgstr ""
+
+#: app/templates/profile.html:30
+msgid "Education"
+msgstr ""
+
+#: app/templates/profile.html:34
+msgid "Years of Service"
+msgstr ""
+
+#: app/templates/profile.html:45
+msgid "Specializations"
+msgstr ""
+
+#: app/templates/profile.html:53
+msgid "None recorded"
+msgstr ""
+
+#: app/templates/profile.html:58
+msgid "Performance Summary"
+msgstr ""
+
+#: app/templates/profile.html:62
+msgid "Awards"
+msgstr ""
+
+#: app/templates/profile.html:66
+msgid "Punishments"
+msgstr ""
+
+#: app/templates/profile.html:76
+msgid "Posting History"
+msgstr ""
+
+#: app/templates/profile.html:85
+msgid "Present"
+msgstr ""
+
+#: app/templates/profile.html:89
+msgid "Role"
+msgstr ""
+
+#: app/templates/profile.html:93
+msgid "No posting history found."
+msgstr ""
+
+#: app/templates/profile.html:100
+msgid "Detailed Performance Records"
+msgstr ""
+
+#: app/templates/profile.html:106
+msgid "Award"
+msgstr ""
+
+#: app/templates/profile.html:106
+msgid "Punishment"
+msgstr ""
+
+#: app/templates/recommend.html:2 app/templates/recommend.html:6
+msgid "Assemble Team"
+msgstr ""
+
+#: app/templates/recommend.html:5
+msgid "AI Team Builder"
+msgstr ""
+
+#: app/templates/recommend.html:7
+msgid "Intelligent roster building based on case requirements and constraints."
+msgstr ""
+
+#: app/templates/recommend.html:18
+msgid "Mission Parameters"
+msgstr ""
+
+#: app/templates/recommend.html:19
+msgid "Define operational scope, skills, and rank constraints"
+msgstr ""
+
+#: app/templates/recommend.html:26
+msgid "Operating Station"
+msgstr ""
+
+#: app/templates/recommend.html:28
+msgid "District Wide (All Stations)"
+msgstr ""
+
+#: app/templates/recommend.html:31 app/templates/recommend.html:32
+msgid "Division"
+msgstr ""
+
+#: app/templates/recommend.html:32
+msgid "Entire"
+msgstr ""
+
+#: app/templates/recommend.html:43
+msgid "Total Personnel Required"
+msgstr ""
+
+#: app/templates/recommend.html:49
+msgid "Mandatory Specialties"
+msgstr ""
+
+#: app/templates/recommend.html:51
+msgid "Search and select skills..."
+msgstr ""
+
+#: app/templates/recommend.html:59
+msgid "Rank Distribution (Optional Constraints)"
+msgstr ""
+
+#: app/templates/recommend.html:74
+msgid "Generate Recommendation"
+msgstr ""
+
+#: app/templates/recommend.html:92
+msgid "Unable to Generate Team"
+msgstr ""
+
+#: app/templates/recommend.html:100
+msgid "Save as PDF / Print"
+msgstr ""
+
+#: app/templates/recommend.html:111
+msgid "Optimal Configuration"
+msgstr ""
+
+#: app/templates/recommend.html:116
+msgid "Coverage"
+msgstr ""
+
+#: app/templates/recommend.html:132
+msgid "Resource Gap Detected"
+msgstr ""
+
+#: app/templates/recommend.html:133 app/templates/recommend.html:265
+msgid "The local station cannot fulfill these requirements:"
+msgstr ""
+
+#: app/templates/recommend.html:140
+msgid "Alternative Division Resources (Manual Assignment Required)"
+msgstr ""
+
+#: app/templates/recommend.html:145
+msgid "ID"
+msgstr ""
+
+#: app/templates/recommend.html:145
+msgid "Location"
+msgstr ""
+
+#: app/templates/recommend.html:172
+msgid "Commanding Officer"
+msgstr ""
+
+#: app/templates/recommend.html:182 app/templates/recommend.html:288
+msgid "Team Leader"
+msgstr ""
+
+#: app/templates/recommend.html:189 app/templates/recommend.html:279
+msgid "AI Rating"
+msgstr ""
+
+#: app/templates/recommend.html:199
+msgid "Task Force Members"
+msgstr ""
+
+#: app/templates/recommend.html:211
+msgid "Member"
+msgstr ""
+
+#: app/templates/recommend.html:218
+msgid "Rating"
+msgstr ""
+
+#: app/templates/recommend.html:239
+msgid "GUJARAT POLICE DEPARTMENT"
+msgstr ""
+
+#: app/templates/recommend.html:240
+msgid "Official Team Recommendation Report"
+msgstr ""
+
+#: app/templates/recommend.html:249
+msgid "Target Station / Division"
+msgstr ""
+
+#: app/templates/recommend.html:251
+msgid "Skill Coverage"
+msgstr ""
+
+#: app/templates/recommend.html:254
+msgid "Date Generated"
+msgstr ""
+
+#: app/templates/recommend.html:256
+msgid "STATUS: APPROVED"
+msgstr ""
+
+#: app/templates/recommend.html:263
+msgid "Resource Gap Warning"
+msgstr ""
+
+#: app/templates/recommend.html:271
+msgid "Task Force Personnel"
+msgstr ""
+
+#: app/templates/recommend.html:277
+msgid "Service ID"
+msgstr ""
+
+#: app/templates/recommend.html:278
+msgid "Officer Name"
+msgstr ""
+
+#: app/templates/recommend.html:300
+msgid "CONFIDENTIAL — FOR INTERNAL SECURITY FORCE USE ONLY"
+msgstr ""
+
+#: app/templates/recommend.html:301
+msgid "Generated by Police Personnel AI Platform"
+msgstr ""
+
+#: app/templates/recommend.html:309
+msgid "Awaiting Parameters"
+msgstr ""
+
+#: app/templates/recommend.html:310
+msgid ""
+"Configure the operational requirements above to generate an optimized AI "
+"team roster."
+msgstr ""
+
+#: app/templates/recommend.html:372
+msgid "Search and select stations or divisions..."
+msgstr ""
+
+#: app/templates/recommend.html:393
+msgid "Search and select required skills..."
+msgstr ""
+

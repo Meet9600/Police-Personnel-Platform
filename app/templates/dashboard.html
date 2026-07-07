@@ -60,6 +60,22 @@
   </div>
 </div>
 
+<!-- Charts Section -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-5 sm:gap-6 mb-12">
+  <div class="card p-5 sm:p-6">
+    <h3 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-4">{{ _('Personnel by Division') }}</h3>
+    <div class="relative h-64">
+      <canvas id="divisionChart"></canvas>
+    </div>
+  </div>
+  <div class="card p-5 sm:p-6">
+    <h3 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-4">{{ _('Force Breakdown by Rank') }}</h3>
+    <div class="relative h-64">
+      <canvas id="rankChart"></canvas>
+    </div>
+  </div>
+</div>
+
 <div class="page-eyebrow mb-4">{{ _('Intelligence Tools') }}</div>
 <h2 class="text-xl font-extrabold text-slate-900 mb-6 tracking-tight">{{ _('Quick Actions') }}</h2>
 <div class="grid md:grid-cols-2 gap-5 sm:gap-6">
@@ -93,4 +109,76 @@
     </p>
   </a>
 </div>
+
+<!-- Chart.js and Initialization -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  const divLabels = {{ div_labels|safe }};
+  const divValues = {{ div_values|safe }};
+  const rankLabels = {{ rank_labels|safe }};
+  const rankValues = {{ rank_values|safe }};
+
+  // Modern soft colors
+  const bgColors = [
+    'rgba(59, 130, 246, 0.7)', // blue
+    'rgba(16, 185, 129, 0.7)', // emerald
+    'rgba(245, 158, 11, 0.7)', // amber
+    'rgba(99, 102, 241, 0.7)', // indigo
+    'rgba(236, 72, 153, 0.7)', // pink
+    'rgba(14, 165, 233, 0.7)', // sky
+    'rgba(139, 92, 246, 0.7)'  // violet
+  ];
+  const borderColors = bgColors.map(c => c.replace('0.7', '1.0'));
+
+  // Division Bar Chart
+  const ctxDiv = document.getElementById('divisionChart').getContext('2d');
+  new Chart(ctxDiv, {
+    type: 'bar',
+    data: {
+      labels: divLabels,
+      datasets: [{
+        label: '{{ _("Personnel") }}',
+        data: divValues,
+        backgroundColor: bgColors[0],
+        borderColor: borderColors[0],
+        borderWidth: 1,
+        borderRadius: 4
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false }
+      },
+      scales: {
+        y: { beginAtZero: true }
+      }
+    }
+  });
+
+  // Rank Doughnut Chart
+  const ctxRank = document.getElementById('rankChart').getContext('2d');
+  new Chart(ctxRank, {
+    type: 'doughnut',
+    data: {
+      labels: rankLabels,
+      datasets: [{
+        data: rankValues,
+        backgroundColor: bgColors,
+        borderColor: '#ffffff',
+        borderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'right' }
+      }
+    }
+  });
+});
+</script>
 {% endblock %}

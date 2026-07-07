@@ -71,6 +71,8 @@ CREATE TABLE IF NOT EXISTS clean.person (
     person_id          TEXT PRIMARY KEY,     -- 'O-31', 'E-1087'
     source_table       TEXT NOT NULL,        -- 'officer_details'|'employee_details'
     source_id          INTEGER NOT NULL,
+    display_id         TEXT,                 -- mode for officers, buckle number for employees
+    photo              TEXT,                 -- URL or path to image
     rank_band          TEXT NOT NULL,        -- 'officer' | 'employee'
     rank_code          TEXT REFERENCES clean.rank_ref(rank_code),
     rank_raw           TEXT,                 -- original designation
@@ -97,6 +99,9 @@ CREATE TABLE IF NOT EXISTS clean.person (
 
     UNIQUE (source_table, source_id)
 );
+
+ALTER TABLE clean.person ADD COLUMN IF NOT EXISTS display_id TEXT;
+ALTER TABLE clean.person ADD COLUMN IF NOT EXISTS photo TEXT;
 
 CREATE INDEX IF NOT EXISTS ix_person_rank   ON clean.person(rank_code);
 CREATE INDEX IF NOT EXISTS ix_person_station ON clean.person(current_station_id);
@@ -161,6 +166,7 @@ DROP VIEW IF EXISTS clean.vw_ml_features CASCADE;
 CREATE OR REPLACE VIEW clean.vw_ml_features AS
 SELECT
     p.person_id,
+    p.display_id,
     p.rank_band,
     p.rank_code,
     r.rank_order,

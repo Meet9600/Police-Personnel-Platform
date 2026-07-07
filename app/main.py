@@ -14,6 +14,7 @@ Bilingual via Flask-Babel (gettext). All AI processing is local/offline.
 import os
 import sys
 import functools
+import json
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -101,7 +102,6 @@ def create_app():
             session["lang"] = lang
         return redirect(request.referrer or url_for("dashboard"))
 
-    # ---- dashboard ----
     @app.route("/")
     @login_required
     def dashboard():
@@ -113,7 +113,30 @@ def create_app():
               (SELECT count(*) FROM clean.dim_station) AS stations,
               (SELECT count(*) FROM clean.dim_division) AS divisions
         """)[0]
-        return render_template("dashboard.html", stats=stats)
+
+        div_chart_data = query("""
+            SELECT d.name_en AS label, count(p.person_id) AS value
+            FROM clean.person p
+            JOIN clean.dim_station s ON p.current_station_id = s.station_id
+            JOIN clean.dim_division d ON s.division_id = d.division_id
+            GROUP BY d.name_en
+            ORDER BY value DESC
+        """)
+        div_labels = json.dumps([r['label'] for r in div_chart_data])
+        div_values = json.dumps([r['value'] for r in div_chart_data])
+
+        rank_chart_data = query("""
+            SELECT rank_code AS label, count(*) AS value
+            FROM clean.person
+            GROUP BY rank_code
+            ORDER BY value DESC
+        """)
+        rank_labels = json.dumps([r['label'] for r in rank_chart_data])
+        rank_values = json.dumps([r['value'] for r in rank_chart_data])
+
+        return render_template("dashboard.html", stats=stats, 
+                               div_labels=div_labels, div_values=div_values,
+                               rank_labels=rank_labels, rank_values=rank_values)
 
     # ---- recommendation ----
     @app.route("/recommend", methods=["GET", "POST"])
@@ -196,9 +219,12 @@ def create_app():
     def personnel():
         rank = request.args.get("rank", "")
         spec = request.args.get("spec", "")
+        station = request.args.get("station", "")
+        min_years = request.args.get("min_years", "")
+        max_years = request.args.get("max_years", "")
         where, params = ["1=1"], []
         sql = """
-            SELECT v.person_id, p.full_name_gu AS name, v.rank_code, v.rank_band,
+            SELECT v.person_id, p.display_id, p.full_name_gu AS name, v.rank_code, v.rank_band,
                    v.station_en, v.years_of_service, v.awards_count, v.punishments_count,
                    v.specializations
             FROM clean.vw_ml_features v
@@ -209,13 +235,117 @@ def create_app():
         if rank:
             where.append("v.rank_code = %s"); params.append(rank)
         if spec:
-            where.append("%s = ANY(v.specializations)"); params.append(spec)
+            where.append("EXISTS (SELECT 1 FROM clean.person_specialization ps WHERE ps.person_id = p.person_id AND ps.spec_code = %s)"); params.append(spec)
+        if station:
+            where.append("p.current_station_id = %s"); params.append(station)
+        if min_years and min_years.isdigit():
+            where.append("v.years_of_service >= %s"); params.append(int(min_years))
+        if max_years and max_years.isdigit():
+            where.append("v.years_of_service <= %s"); params.append(int(max_years))
+
         rows = query(sql.format(where=" AND ".join(where)), params)
         ranks = query("SELECT rank_code FROM clean.rank_ref ORDER BY rank_order DESC")
         specs = query("SELECT spec_code FROM clean.specialization_ref "
                       "WHERE spec_code<>'UNCLASSIFIED' ORDER BY spec_code")
-        return render_template("personnel.html", rows=rows, ranks=ranks, specs=specs,
-                               sel_rank=rank, sel_spec=spec)
+        stations = query("SELECT station_id, name_en FROM clean.dim_station ORDER BY name_en")
+        return render_template("personnel.html", rows=rows, ranks=ranks, specs=specs, stations=stations,
+                               sel_rank=rank, sel_spec=spec, sel_station=station, sel_min_years=min_years, sel_max_years=max_years)
+
+    @app.route("/debug_run")
+    def debug_run():
+        import subprocess
+        try:
+            result = subprocess.run(["python3", "test_complex_nlp.py"], capture_output=True, text=True)
+            return "<pre>" + result.stdout + "\n" + result.stderr + "</pre>"
+        except Exception as e:
+            return str(e)
+
+    @app.route("/rebuild_db")
+    def rebuild_db():
+        import subprocess
+        try:
+            result = subprocess.run(["python3", "pipeline/run_pipeline.py"], capture_output=True, text=True)
+            return "<pre>" + result.stdout + "\n" + result.stderr + "</pre>"
+        except Exception as e:
+            return str(e)
+
+    @app.route("/personnel/<path:person_id>")
+    @login_required
+    def profile(person_id):
+        # Base info
+        person = query("""
+            SELECT p.*, v.awards_count, v.punishments_count, v.specializations,
+                   d.name_en as div_name_en, d.name_raw as div_name_gu,
+                   s.name_en as st_name_en, s.name_raw as st_name_gu
+            FROM clean.person p
+            JOIN clean.vw_ml_features v ON p.person_id = v.person_id
+            LEFT JOIN clean.dim_station s ON p.current_station_id = s.station_id
+            LEFT JOIN clean.dim_division d ON s.division_id = d.division_id
+            WHERE p.person_id = %s
+        """, [person_id])
+        
+        if not person:
+            flash(_("Personnel not found."), "error")
+            return redirect(url_for("personnel"))
+        
+        person = person[0]
+        
+        # Posting history
+        history = query("""
+            SELECT h.* 
+            FROM clean.person_posting_history h
+            WHERE h.person_id = %s
+            ORDER BY h.start_date DESC
+        """, [person_id])
+
+        # Performance (Awards & Punishments)
+        try:
+            if person_id.startswith('O-'):
+                oid = person_id[2:]
+                performance = query("""
+                    SELECT 'AWARD' as record_type, award_date as event_date, award_name as description
+                    FROM public.officer_awards 
+                    WHERE officer_id = %s 
+                      AND lower(regexp_replace(award_name, '\\s+', '', 'g')) NOT IN ('nill', 'nil', 'નીલ', 'na', 'none', '', '-', 'no')
+                      AND award_name IS NOT NULL
+                    UNION ALL
+                    SELECT 'PUNISHMENT' as record_type, punishment_date as event_date, punishment_type as description
+                    FROM public.officer_punishments 
+                    WHERE officer_id = %s
+                      AND lower(regexp_replace(punishment_type, '\\s+', '', 'g')) NOT IN ('nill', 'nil', 'નીલ', 'na', 'none', '', '-', 'no')
+                      AND punishment_type IS NOT NULL
+                    ORDER BY event_date DESC
+                """, [oid, oid])
+            else:
+                eid = person_id[2:]
+                performance = query("""
+                    SELECT 'AWARD' as record_type, award_date as event_date, award_name as description
+                    FROM public.employee_awards 
+                    WHERE employee_id = %s
+                      AND lower(regexp_replace(award_name, '\\s+', '', 'g')) NOT IN ('nill', 'nil', 'નીલ', 'na', 'none', '', '-', 'no')
+                      AND award_name IS NOT NULL
+                    UNION ALL
+                    SELECT 'PUNISHMENT' as record_type, punishment_date as event_date, punishment_type as description
+                    FROM public.employee_punishments 
+                    WHERE employee_id = %s
+                      AND lower(regexp_replace(punishment_type, '\\s+', '', 'g')) NOT IN ('nill', 'nil', 'નીલ', 'na', 'none', '', '-', 'no')
+                      AND punishment_type IS NOT NULL
+                    ORDER BY event_date DESC
+                """, [eid, eid])
+        except Exception as e:
+            import traceback
+            with open("scratch/db_schema_err.txt", "w") as f:
+                f.write(traceback.format_exc())
+                
+                # Also dump the actual schema of the tables
+                try:
+                    cols = query("SELECT table_name, column_name, data_type FROM information_schema.columns WHERE table_name IN ('officer_awards', 'officer_punishments')")
+                    f.write("\n\nSCHEMA:\n" + str(cols))
+                except Exception:
+                    pass
+            performance = []
+
+        return render_template("profile.html", person=person, history=history, performance=performance)
 
     return app
 
@@ -229,6 +359,17 @@ def _users_table_exists():
 
 
 app = create_app()
+
+@app.route("/debug_counts", methods=["GET"])
+def debug_counts():
+    person_count = query("SELECT COUNT(*) as count FROM clean.person")[0]["count"]
+    station_count = query("SELECT COUNT(*) as count FROM clean.dim_station")[0]["count"]
+    duty_count = query("SELECT COUNT(*) as count FROM clean.duty_map")[0]["count"]
+    return jsonify({
+        "personnel": person_count,
+        "stations": station_count,
+        "duties": duty_count
+    })
 
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=5001, debug=os.environ.get("FLASK_DEBUG", "0") == "1")

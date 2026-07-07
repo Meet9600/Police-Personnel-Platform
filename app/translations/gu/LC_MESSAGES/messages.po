@@ -1,151 +1,751 @@
+
 msgid ""
 msgstr ""
-"Content-Type: text/plain; charset=UTF-8\n"
+"Project-Id-Version: PROJECT VERSION\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2026-07-06 15:51+0530\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: gu\n"
+"Language-Team: gu <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
 
-msgid "Police Personnel & AI"
-msgstr "પોલીસ કર્મચારી અને AI"
+#: app/main.py:49
+msgid "Your session expired. Please try submitting again."
+msgstr "તમારું સત્ર સમાપ્ત થઈ ગયું છે. કૃપા કરીને ફરી સબમિટ કરવાનો પ્રયાસ કરો."
 
-msgid "District SP Office"
-msgstr "જિલ્લા એસ.પી. કચેરી"
-
-msgid "District SP Office personnel system"
-msgstr "જિલ્લા એસ.પી. કચેરી કર્મચારી સિસ્ટમ"
-
-msgid "Dashboard"
-msgstr "ડેશબોર્ડ"
-
-msgid "Build a Team"
-msgstr "ટીમ બનાવો"
-
-msgid "Ask"
-msgstr "પૂછો"
-
-msgid "Personnel"
-msgstr "કર્મચારીઓ"
-
-msgid "Sign in"
-msgstr "સાઇન ઇન"
-
-msgid "Sign out"
-msgstr "સાઇન આઉટ"
-
-msgid "Username"
-msgstr "વપરાશકર્તા નામ"
-
-msgid "Password"
-msgstr "પાસવર્ડ"
-
+#: app/main.py:91
 msgid "Invalid username or password."
 msgstr "અમાન્ય વપરાશકર્તા નામ અથવા પાસવર્ડ."
 
+#: app/main.py:191
 msgid "Please complete the form correctly."
 msgstr "કૃપા કરીને ફોર્મ યોગ્ય રીતે ભરો."
 
-msgid "Overview"
-msgstr "ઝાંખી"
+#: app/main.py:270
+#, fuzzy
+msgid "Personnel not found."
+msgstr "કર્મચારી ડિરેક્ટરી"
 
-msgid "Live snapshot of the cleaned personnel store."
-msgstr "સાફ કરેલા કર્મચારી ડેટાનો જીવંત સ્નેપશોટ."
+#: app/templates/ask.html:2 app/templates/ask.html:10
+#: app/templates/base.html:64 app/templates/base.html:100
+msgid "Smart Search"
+msgstr "સ્માર્ટ સર્ચ"
 
-msgid "Total personnel"
-msgstr "કુલ કર્મચારીઓ"
+#: app/templates/ask.html:9
+msgid "Natural Language Interface"
+msgstr "નેચરલ લેંગ્વેજ ઇન્ટરફેસ"
 
-msgid "Officers"
-msgstr "અધિકારીઓ"
+#: app/templates/ask.html:12
+msgid ""
+"Extract intelligence directly from the secure local database using plain "
+"text questions. No data leaves the server."
+msgstr ""
 
-msgid "Employees"
-msgstr "કર્મચારીઓ"
+#: app/templates/ask.html:23
+msgid "e.g. How many PSIs are stationed at Sanand? Or list all cyber officers."
+msgstr "દા.ત. સાણંદમાં કેટલા PSI તૈનાત છે? અથવા તમામ સાયબર અધિકારીઓની યાદી બનાવો."
+"દા.ત. સાણંદમાં કેટલા PSI તૈનાત છે? અથવા તમામ સાયબર અધિકારીઓની યાદી "
+"બનાવો.દા.ત. સાણંદમાં કેટલા PSI તૈનાત છે? અથવા તમામ સાયબર અધિકારીઓની યાદી "
+"બનાવો.દા.ત. સાણંદમાં કેટલા PSI તૈનાત છે? અથવા તમામ સાયબર અધિકારીઓની યાદી "
+"બનાવો.દા.ત. સાણંદ ખાતે કેટલા PSI છે? · સાયબર અધિકારીઓની યાદી · સૌથી વધુ "
+"ઇનામ કોની પાસે છે?"
 
-msgid "Stations / Branches"
-msgstr "સ્ટેશન / શાખાઓ"
+#: app/templates/ask.html:26
+msgid "Execute Search"
+msgstr "સર્ચ ચલાવો"
 
+#: app/templates/ask.html:30
+msgid "Try:"
+msgstr "પ્રયાસ કરો:"
+
+#: app/templates/ask.html:31
+msgid "How many ASIs in Ahmedabad?"
+msgstr "અમદાવાદમાં કેટલા ASI છે?"
+
+#: app/templates/ask.html:32
+msgid "List cyber specialists"
+msgstr "સાયબર નિષ્ણાતોની યાદી"
+
+#: app/templates/ask.html:33
+msgid "Officers with 10+ years service"
+msgstr "10+ વર્ષની સેવાવાળા અધિકારીઓ"
+
+#: app/templates/ask.html:44
+msgid "Query Rejected"
+msgstr "સર્ચ નકારી કાઢવામાં આવ્યું"
+
+#: app/templates/ask.html:52
+msgid "Print / Save PDF"
+msgstr "પ્રિન્ટ / PDF સેવ કરો"
+
+#: app/templates/ask.html:71
+msgid "Template Executed"
+msgstr "ટેમ્પલેટ ચલાવવામાં આવ્યું"
+
+#: app/templates/ask.html:95
+msgid "Results extracted successfully"
+msgstr "પરિણામો સફળતાપૂર્વક મેળવ્યા"
+
+#: app/templates/ask.html:96 app/templates/personnel.html:12
+msgid "records"
+msgstr "રેકોર્ડ્સ"
+
+#: app/templates/ask.html:103
+msgid "The query executed successfully but returned no records."
+msgstr "સર્ચ સફળતાપૂર્વક ચાલ્યું પરંતુ કોઈ રેકોર્ડ મળ્યો નથી."
+
+#: app/templates/base.html:6 app/templates/base.html:47
+msgid "Police Personnel Platform"
+msgstr "પોલીસ કર્મચારી પ્લેટફોર્મ"
+
+#: app/templates/base.html:48
+msgid "District SP Office"
+msgstr "જિલ્લા એસ.પી. કચેરી"
+
+#: app/templates/base.html:56 app/templates/base.html:98
+msgid "Dashboard"
+msgstr "ડેશબોર્ડ"
+
+#: app/templates/base.html:60 app/templates/base.html:99
+msgid "Build Team"
+msgstr "ટીમ બનાવો"
+
+#: app/templates/base.html:68 app/templates/base.html:101
+msgid "Directory"
+msgstr "ડિરેક્ટરી"
+
+#: app/templates/base.html:87 app/templates/base.html:102
+msgid "Sign out"
+msgstr "સાઇન આઉટ"
+
+#: app/templates/base.html:130
+msgid "Secure On-Premise System. Data is isolated to the local district network."
+msgstr "સુરક્ષિત ઓન-પ્રિમાઇસ સિસ્ટમ. ડેટા સ્થાનિક જિલ્લા નેટવર્ક સુધી મર્યાદિત છે."
+
+#: app/templates/base.html:133
+msgid "Offline AI · Encrypted"
+msgstr "ઓફલાઇન AI · એન્ક્રિપ્ટેડ"
+
+#: app/templates/dashboard.html:2 app/templates/dashboard.html:6
+msgid "Command Dashboard"
+msgstr "કમાન્ડ ડેશબોર્ડ"
+
+#: app/templates/dashboard.html:5
+msgid "Operations Center"
+msgstr "ઓપરેશન્સ સેન્ટર"
+
+#: app/templates/dashboard.html:7
+msgid "Real-time insights across district personnel."
+msgstr "જિલ્લાના કર્મચારીઓ વિશે રિયલ ટાઇમ માહિતી."
+
+#: app/templates/dashboard.html:13
+msgid "System Operational"
+msgstr "સિસ્ટમ કાર્યરત છે"
+
+#: app/templates/dashboard.html:17
+msgid "On-Premise Database Connected"
+msgstr "ઓન-પ્રિમાઇસ ડેટાબેઝ જોડાયેલ છે"
+
+#: app/templates/dashboard.html:21
+msgid "Offline AI Engine Ready"
+msgstr "ઓફલાઇન AI એન્જિન તૈયાર છે"
+
+#: app/templates/dashboard.html:30
+msgid "Total Strength"
+msgstr "કુલ સંખ્યા"
+
+#: app/templates/dashboard.html:37
+msgid "Active Officers"
+msgstr "સક્રિય અધિકારીઓ"
+
+#: app/templates/dashboard.html:44
+msgid "Support Staff"
+msgstr "સહાયક કર્મચારીઓ"
+
+#: app/templates/dashboard.html:51
+msgid "Stations"
+msgstr "સ્ટેશન"
+
+#: app/templates/dashboard.html:58
 msgid "Divisions"
 msgstr "વિભાગો"
 
-msgid "Ask a question"
-msgstr "પ્રશ્ન પૂછો"
+#: app/templates/dashboard.html:66
+#, fuzzy
+msgid "Personnel by Division"
+msgstr "કર્મચારી ડિરેક્ટરી"
 
-msgid "Specify a case requirement and get the most suitable team, with the reasoning behind each choice."
-msgstr "કેસની જરૂરિયાત જણાવો અને દરેક પસંદગી પાછળના કારણ સાથે સૌથી યોગ્ય ટીમ મેળવો."
+#: app/templates/dashboard.html:72
+msgid "Force Breakdown by Rank"
+msgstr ""
 
-msgid "Ask in plain language about personnel — counts, skills, awards, vacancies."
-msgstr "કર્મચારીઓ વિશે સરળ ભાષામાં પૂછો — સંખ્યા, કૌશલ્ય, ઇનામો, ખાલી જગ્યાઓ."
+#: app/templates/dashboard.html:79
+msgid "Intelligence Tools"
+msgstr "ઇન્ટેલિજન્સ ટૂલ્સ"
 
-msgid "Station"
-msgstr "સ્ટેશન"
+#: app/templates/dashboard.html:80
+msgid "Quick Actions"
+msgstr "ઝડપી ક્રિયાઓ"
 
-msgid "Required skills"
-msgstr "જરૂરી કૌશલ્યો"
+#: app/templates/dashboard.html:91
+msgid "Construct Team Profile"
+msgstr "ટીમ પ્રોફાઇલ બનાવો"
 
-msgid "Team size"
-msgstr "ટીમનું કદ"
+#: app/templates/dashboard.html:93
+msgid ""
+"Input specific case requirements to assemble the most capable team based "
+"on skills, rank, and availability. Includes transparent reasoning."
+msgstr ""
 
-msgid "Rank mix (optional)"
-msgstr "રેન્ક મિશ્રણ (વૈકલ્પિક)"
+#: app/templates/dashboard.html:106
+msgid "Query Database"
+msgstr "ડેટાબેઝ સર્ચ કરો"
 
-msgid "Recommend team"
-msgstr "ટીમ ભલામણ કરો"
+#: app/templates/dashboard.html:108
+msgid ""
+"Extract specific information using natural language. Query exact "
+"headcounts, specialties, pending transfers, and operational metrics."
+msgstr ""
 
-msgid "Recommended team"
-msgstr "ભલામણ કરેલ ટીમ"
+#: app/templates/dashboard.html:141
+#, fuzzy
+msgid "Personnel"
+msgstr "કર્મચારી ડિરેક્ટરી"
 
-msgid "skill coverage"
-msgstr "કૌશલ્ય આવરણ"
+#: app/templates/login.html:2 app/templates/login.html:42
+msgid "Secure Access"
+msgstr "સુરક્ષિત એક્સેસ"
 
-msgid "score"
-msgstr "સ્કોર"
+#: app/templates/login.html:11
+msgid "Intelligent Personnel Management"
+msgstr "સ્માર્ટ કર્મચારી મેનેજમેન્ટ"
 
-msgid "Skills not available at this station"
-msgstr "આ સ્ટેશન પર ઉપલબ્ધ ન હોય તેવા કૌશલ્યો"
+#: app/templates/login.html:14
+msgid ""
+"Intelligent team assembly, natural language queries, and secure roster "
+"management. Fully on-premise for district operations."
+msgstr ""
 
-msgid "These personnel elsewhere in the division have the missing skills (not auto-assigned):"
-msgstr "વિભાગમાં અન્યત્ર આ કર્મચારીઓ પાસે ખૂટતા કૌશલ્યો છે (આપમેળે સોંપાયેલ નથી):"
+#: app/templates/login.html:21
+msgid "End-to-end encrypted local processing"
+msgstr "સંપૂર્ણપણે એન્ક્રિપ્ટેડ સ્થાનિક પ્રોસેસિંગ"
 
-msgid "ID"
-msgstr "આઈડી"
+#: app/templates/login.html:27
+msgid "Offline execution with no external data transmission"
+msgstr "બાહ્ય ડેટા ટ્રાન્સફર વગર ઓફલાઇન એક્ઝેક્યુશન"
 
-msgid "Name"
-msgstr "નામ"
+#: app/templates/login.html:33
+msgid "Full audit trail for all access"
+msgstr "તમામ એક્સેસ માટે સંપૂર્ણ ઓડિટ ટ્રેલ"
 
+#: app/templates/login.html:41
+msgid "System Online"
+msgstr "સિસ્ટમ ઓનલાઈન"
+
+#: app/templates/login.html:43
+msgid "District SP Office Personnel Platform"
+msgstr "જિલ્લા એસ.પી. કચેરી કર્મચારી પ્લેટફોર્મ"
+
+#: app/templates/login.html:64
+msgid "Officer ID"
+msgstr "અધિકારી ID"
+
+#: app/templates/login.html:66
+msgid "Enter identification"
+msgstr "ઓળખ દાખલ કરો"
+
+#: app/templates/login.html:70
+msgid "Passcode"
+msgstr "પાસકોડ"
+
+#: app/templates/login.html:72
+msgid "Enter secure passcode"
+msgstr "સુરક્ષિત પાસકોડ દાખલ કરો"
+
+#: app/templates/login.html:77
+msgid "Authenticate"
+msgstr "પ્રમાણિત કરો"
+
+#: app/templates/login.html:82
+msgid "Authorized personnel only. All access is logged."
+msgstr "ફક્ત અધિકૃત કર્મચારીઓ. તમામ એક્સેસ લોગ થાય છે."
+
+#: app/templates/personnel.html:2 app/templates/personnel.html:7
+msgid "Personnel Directory"
+msgstr "કર્મચારી ડિરેક્ટરી"
+
+#: app/templates/personnel.html:6
+msgid "Roster Management"
+msgstr "રોસ્ટર મેનેજમેન્ટ"
+
+#: app/templates/personnel.html:8
+msgid "Complete roster of active district personnel."
+msgstr "સક્રિય જિલ્લા કર્મચારીઓની સંપૂર્ણ યાદી."
+
+#: app/templates/personnel.html:19 app/templates/personnel.html:64
+#: app/templates/profile.html:10 app/templates/profile.html:88
+#: app/templates/recommend.html:145 app/templates/recommend.html:276
 msgid "Rank"
 msgstr "રેન્ક"
 
-msgid "Skill"
+#: app/templates/personnel.html:21
+msgid "All Ranks"
+msgstr "તમામ રેન્ક"
+
+#: app/templates/personnel.html:26 app/templates/recommend.html:145
+msgid "Specialty"
 msgstr "કૌશલ્ય"
 
-msgid "Set the case requirements on the left, then recommend a team."
-msgstr "ડાબી બાજુ કેસની જરૂરિયાતો સેટ કરો, પછી ટીમની ભલામણ કરો."
+#: app/templates/personnel.html:28
+msgid "All Specialties"
+msgstr "તમામ કૌશલ્યો"
 
-msgid "Plain-language questions about personnel. Answers come from the local database only."
-msgstr "કર્મચારીઓ વિશે સરળ ભાષાના પ્રશ્નો. જવાબો ફક્ત સ્થાનિક ડેટાબેઝમાંથી આવે છે."
+#: app/templates/personnel.html:33
+#, fuzzy
+msgid "Station"
+msgstr "સ્ટેશન"
 
-msgid "e.g. How many PSIs at Sanand? · List cyber officers · Who has the most awards?"
-msgstr "દા.ત. સાણંદ ખાતે કેટલા PSI છે? · સાયબર અધિકારીઓની યાદી · સૌથી વધુ ઇનામ કોની પાસે છે?"
+#: app/templates/personnel.html:35
+#, fuzzy
+msgid "All Stations"
+msgstr "સ્ટેશન"
 
-msgid "result(s)"
-msgstr "પરિણામ(ઓ)"
+#: app/templates/personnel.html:41
+msgid "Minimum Years of Service"
+msgstr ""
 
-msgid "No matching records."
-msgstr "કોઈ મેળ ખાતા રેકોર્ડ નથી."
+#: app/templates/personnel.html:41
+#, fuzzy
+msgid "Min Yrs"
+msgstr "વર્ષ"
 
-msgid "All"
-msgstr "બધા"
+#: app/templates/personnel.html:45
+msgid "Maximum Years of Service"
+msgstr ""
 
-msgid "Filter"
-msgstr "ફિલ્ટર"
+#: app/templates/personnel.html:45
+#, fuzzy
+msgid "Max Yrs"
+msgstr "વર્ષ"
 
-msgid "Service yrs"
-msgstr "સેવા વર્ષ"
+#: app/templates/personnel.html:53
+msgid "Apply Filter"
+msgstr "ફિલ્ટર લાગુ કરો"
 
-msgid "Awards"
+#: app/templates/personnel.html:62
+msgid "Identification"
+msgstr "ઓળખ"
+
+#: app/templates/personnel.html:63 app/templates/recommend.html:145
+msgid "Name"
+msgstr "નામ"
+
+#: app/templates/personnel.html:65 app/templates/profile.html:38
+msgid "Current Station"
+msgstr "વર્તમાન સ્ટેશન"
+
+#: app/templates/personnel.html:66
+msgid "Tenure"
+msgstr "કાર્યકાળ"
+
+#: app/templates/personnel.html:67
+msgid "Commendations"
 msgstr "ઇનામો"
 
-msgid "Skills"
+#: app/templates/personnel.html:68
+msgid "Specialties"
 msgstr "કૌશલ્યો"
 
-msgid "shown (max 300)"
-msgstr "બતાવેલ (મહત્તમ 300)"
+#: app/templates/personnel.html:84
+msgid "yrs"
+msgstr "વર્ષ"
 
-msgid "Runs fully on-premise. No data leaves this network."
-msgstr "સંપૂર્ણપણે ઓન-પ્રિમાઇસ ચાલે છે. કોઈ ડેટા આ નેટવર્ક છોડતો નથી."
+#: app/templates/personnel.html:105
+msgid "No personnel match the selected filters."
+msgstr "પસંદ કરેલા ફિલ્ટર્સ સાથે કોઈ કર્મચારી મેળ ખાતા નથી."
+
+#: app/templates/personnel.html:110
+msgid "records displayed"
+msgstr "રેકોર્ડ્સ પ્રદર્શિત"
+
+#: app/templates/profile.html:2
+#, fuzzy
+msgid "Personnel Profile"
+msgstr "કર્મચારી ડિરેક્ટરી"
+
+#: app/templates/profile.html:7
+#, fuzzy
+msgid "Back to Directory"
+msgstr "ડિરેક્ટરી"
+
+#: app/templates/profile.html:19
+#, fuzzy
+msgid "Personal Details"
+msgstr "કર્મચારી ડિરેક્ટરી"
+
+#: app/templates/profile.html:22
+msgid "Age"
+msgstr ""
+
+#: app/templates/profile.html:23 app/templates/profile.html:35
+#, fuzzy
+msgid "Years"
+msgstr "વર્ષ"
+
+#: app/templates/profile.html:26
+msgid "Gender"
+msgstr ""
+
+#: app/templates/profile.html:27
+msgid "Male"
+msgstr ""
+
+#: app/templates/profile.html:27
+msgid "Female"
+msgstr ""
+
+#: app/templates/profile.html:30
+#, fuzzy
+msgid "Education"
+msgstr "સ્થળ"
+
+#: app/templates/profile.html:34
+msgid "Years of Service"
+msgstr ""
+
+#: app/templates/profile.html:45
+#, fuzzy
+msgid "Specializations"
+msgstr "કૌશલ્યો"
+
+#: app/templates/profile.html:53
+#, fuzzy
+msgid "None recorded"
+msgstr "રેકોર્ડ્સ"
+
+#: app/templates/profile.html:58
+msgid "Performance Summary"
+msgstr ""
+
+#: app/templates/profile.html:62
+msgid "Awards"
+msgstr ""
+
+#: app/templates/profile.html:66
+msgid "Punishments"
+msgstr ""
+
+#: app/templates/profile.html:76
+msgid "Posting History"
+msgstr ""
+
+#: app/templates/profile.html:85
+msgid "Present"
+msgstr ""
+
+#: app/templates/profile.html:89
+msgid "Role"
+msgstr ""
+
+#: app/templates/profile.html:93
+msgid "No posting history found."
+msgstr ""
+
+#: app/templates/profile.html:100
+msgid "Detailed Performance Records"
+msgstr ""
+
+#: app/templates/profile.html:106
+msgid "Award"
+msgstr ""
+
+#: app/templates/profile.html:106
+msgid "Punishment"
+msgstr ""
+
+#: app/templates/recommend.html:2 app/templates/recommend.html:6
+msgid "Assemble Team"
+msgstr "ટીમ બનાવો"
+
+#: app/templates/recommend.html:5
+msgid "AI Team Builder"
+msgstr "AI ટીમ બિલ્ડર"
+
+#: app/templates/recommend.html:7
+msgid "Intelligent roster building based on case requirements and constraints."
+msgstr "કેસની જરૂરિયાતો અને મર્યાદાઓના આધારે સ્માર્ટ રોસ્ટર બિલ્ડિંગ."
+
+#: app/templates/recommend.html:18
+msgid "Mission Parameters"
+msgstr "મિશન પરિમાણો"
+
+#: app/templates/recommend.html:19
+msgid "Define operational scope, skills, and rank constraints"
+msgstr "ઓપરેશનલ વ્યાપ, કૌશલ્યો અને રેન્ક મર્યાદાઓ વ્યાખ્યાયિત કરો"
+
+#: app/templates/recommend.html:26
+msgid "Operating Station"
+msgstr "ઓપરેટિંગ સ્ટેશન"
+
+#: app/templates/recommend.html:28
+msgid "District Wide (All Stations)"
+msgstr "જિલ્લાવ્યાપી (તમામ સ્ટેશનો)"
+
+#: app/templates/recommend.html:31 app/templates/recommend.html:32
+msgid "Division"
+msgstr "વિભાગ"
+
+#: app/templates/recommend.html:32
+msgid "Entire"
+msgstr "સંપૂર્ણ"
+
+#: app/templates/recommend.html:43
+msgid "Total Personnel Required"
+msgstr "કુલ જરૂરી કર્મચારીઓ"
+
+#: app/templates/recommend.html:49
+msgid "Mandatory Specialties"
+msgstr "ફરજિયાત કૌશલ્યો"
+
+#: app/templates/recommend.html:51
+msgid "Search and select skills..."
+msgstr "કૌશલ્યો શોધો અને પસંદ કરો..."
+
+#: app/templates/recommend.html:59
+msgid "Rank Distribution (Optional Constraints)"
+msgstr "રેન્ક વિતરણ (વૈકલ્પિક મર્યાદાઓ)"
+
+#: app/templates/recommend.html:74
+msgid "Generate Recommendation"
+msgstr "ભલામણ બનાવો"
+
+#: app/templates/recommend.html:92
+msgid "Unable to Generate Team"
+msgstr "ટીમ બનાવવામાં અસમર્થ"
+
+#: app/templates/recommend.html:100
+msgid "Save as PDF / Print"
+msgstr "PDF તરીકે સાચવો / પ્રિન્ટ કરો"
+
+#: app/templates/recommend.html:111
+msgid "Optimal Configuration"
+msgstr "શ્રેષ્ઠ રૂપરેખાંકન"
+
+#: app/templates/recommend.html:116
+msgid "Coverage"
+msgstr "કવરેજ"
+
+#: app/templates/recommend.html:132
+msgid "Resource Gap Detected"
+msgstr "સંસાધન ખાલીપું મળ્યું"
+
+#: app/templates/recommend.html:133 app/templates/recommend.html:265
+msgid "The local station cannot fulfill these requirements:"
+msgstr "સ્થાનિક સ્ટેશન આ જરૂરિયાતો પૂરી કરી શકતું નથી:"
+
+#: app/templates/recommend.html:140
+msgid "Alternative Division Resources (Manual Assignment Required)"
+msgstr "વૈકલ્પિક વિભાગના સંસાધનો (મેન્યુઅલ એસાઇનમેન્ટ જરૂરી)"
+
+#: app/templates/recommend.html:145
+msgid "ID"
+msgstr "આઈડી"
+
+#: app/templates/recommend.html:145
+msgid "Location"
+msgstr "સ્થળ"
+
+#: app/templates/recommend.html:172
+msgid "Commanding Officer"
+msgstr "કમાન્ડિંગ ઓફિસર"
+
+#: app/templates/recommend.html:182 app/templates/recommend.html:288
+msgid "Team Leader"
+msgstr "ટીમ લીડર"
+
+#: app/templates/recommend.html:189 app/templates/recommend.html:279
+msgid "AI Rating"
+msgstr "AI રેટિંગ"
+
+#: app/templates/recommend.html:199
+msgid "Task Force Members"
+msgstr "ટાસ્ક ફોર્સ સભ્યો"
+
+#: app/templates/recommend.html:211
+msgid "Member"
+msgstr "સભ્ય"
+
+#: app/templates/recommend.html:218
+msgid "Rating"
+msgstr "રેટિંગ"
+
+#: app/templates/recommend.html:239
+msgid "GUJARAT POLICE DEPARTMENT"
+msgstr "ગુજરાત પોલીસ વિભાગ"
+
+#: app/templates/recommend.html:240
+msgid "Official Team Recommendation Report"
+msgstr "સત્તાવાર ટીમ ભલામણ રિપોર્ટ"
+
+#: app/templates/recommend.html:249
+msgid "Target Station / Division"
+msgstr "લક્ષ્ય સ્ટેશન / વિભાગ"
+
+#: app/templates/recommend.html:251
+msgid "Skill Coverage"
+msgstr "કૌશલ્ય કવરેજ"
+
+#: app/templates/recommend.html:254
+msgid "Date Generated"
+msgstr "બનાવ્યાની તારીખ"
+
+#: app/templates/recommend.html:256
+msgid "STATUS: APPROVED"
+msgstr "સ્થિતિ: મંજૂર"
+
+#: app/templates/recommend.html:263
+msgid "Resource Gap Warning"
+msgstr "સંસાધન અછત ચેતવણી"
+
+#: app/templates/recommend.html:271
+msgid "Task Force Personnel"
+msgstr "ટાસ્ક ફોર્સ કર્મચારીઓ"
+
+#: app/templates/recommend.html:277
+msgid "Service ID"
+msgstr "સર્વિસ ID"
+
+#: app/templates/recommend.html:278
+msgid "Officer Name"
+msgstr "અધિકારીનું નામ"
+
+#: app/templates/recommend.html:300
+msgid "CONFIDENTIAL — FOR INTERNAL SECURITY FORCE USE ONLY"
+msgstr "ગોપનીય — ફક્ત આંતરિક સુરક્ષા દળના ઉપયોગ માટે"
+
+#: app/templates/recommend.html:301
+msgid "Generated by Police Personnel AI Platform"
+msgstr "પોલીસ કર્મચારી AI પ્લેટફોર્મ દ્વારા બનાવેલ"
+
+#: app/templates/recommend.html:309
+msgid "Awaiting Parameters"
+msgstr "પરિમાણોની રાહ જોવાય છે"
+
+#: app/templates/recommend.html:310
+msgid ""
+"Configure the operational requirements above to generate an optimized AI "
+"team roster."
+msgstr ""
+
+#: app/templates/recommend.html:372
+msgid "Search and select stations or divisions..."
+msgstr "સ્ટેશનો અથવા વિભાગો શોધો અને પસંદ કરો..."
+
+#: app/templates/recommend.html:393
+msgid "Search and select required skills..."
+msgstr "જરૂરી કૌશલ્યો શોધો અને પસંદ કરો..."
+
+#~ msgid "Ask"
+#~ msgstr "પૂછો"
+
+#~ msgid "Sign in"
+#~ msgstr "સાઇન ઇન"
+
+#~ msgid "Username"
+#~ msgstr "વપરાશકર્તા નામ"
+
+#~ msgid "Overview"
+#~ msgstr "ઝાંખી"
+
+#~ msgid "Live snapshot of the cleaned personnel store."
+#~ msgstr "સાફ કરેલા કર્મચારી ડેટાનો જીવંત સ્નેપશોટ."
+
+#~ msgid "Employees"
+#~ msgstr "કર્મચારીઓ"
+
+#~ msgid "Stations / Branches"
+#~ msgstr "સ્ટેશન / શાખાઓ"
+
+#~ msgid "Ask a question"
+#~ msgstr "પ્રશ્ન પૂછો"
+
+#~ msgid ""
+#~ "Specify a case requirement and get "
+#~ "the most suitable team, with the "
+#~ "reasoning behind each choice."
+#~ msgstr ""
+#~ "કેસની જરૂરિયાત જણાવો અને દરેક પસંદગી "
+#~ "પાછળના કારણ સાથે સૌથી યોગ્ય ટીમ "
+#~ "મેળવો."
+
+#~ msgid ""
+#~ "Ask in plain language about personnel"
+#~ " — counts, skills, awards, vacancies."
+#~ msgstr "કર્મચારીઓ વિશે સરળ ભાષામાં પૂછો — સંખ્યા, કૌશલ્ય, ઇનામો, ખાલી જગ્યાઓ."
+
+#~ msgid "Required skills"
+#~ msgstr "જરૂરી કૌશલ્યો"
+
+#~ msgid "Rank mix (optional)"
+#~ msgstr "રેન્ક મિશ્રણ (વૈકલ્પિક)"
+
+#~ msgid "Recommend team"
+#~ msgstr "ટીમ ભલામણ કરો"
+
+#~ msgid "Recommended team"
+#~ msgstr "ભલામણ કરેલ ટીમ"
+
+#~ msgid "score"
+#~ msgstr "સ્કોર"
+
+#~ msgid "Skills not available at this station"
+#~ msgstr "આ સ્ટેશન પર ઉપલબ્ધ ન હોય તેવા કૌશલ્યો"
+
+#~ msgid ""
+#~ "These personnel elsewhere in the "
+#~ "division have the missing skills (not"
+#~ " auto-assigned):"
+#~ msgstr ""
+#~ "વિભાગમાં અન્યત્ર આ કર્મચારીઓ પાસે ખૂટતા"
+#~ " કૌશલ્યો છે (આપમેળે સોંપાયેલ નથી):"
+
+#~ msgid "Skill"
+#~ msgstr "કૌશલ્ય"
+
+#~ msgid "Set the case requirements on the left, then recommend a team."
+#~ msgstr "ડાબી બાજુ કેસની જરૂરિયાતો સેટ કરો, પછી ટીમની ભલામણ કરો."
+
+#~ msgid ""
+#~ "Plain-language questions about personnel. "
+#~ "Answers come from the local database "
+#~ "only."
+#~ msgstr ""
+#~ "કર્મચારીઓ વિશે સરળ ભાષાના પ્રશ્નો. જવાબો"
+#~ " ફક્ત સ્થાનિક ડેટાબેઝમાંથી આવે છે."
+
+#~ msgid "result(s)"
+#~ msgstr "પરિણામ(ઓ)"
+
+#~ msgid "No matching records."
+#~ msgstr "કોઈ મેળ ખાતા રેકોર્ડ નથી."
+
+#~ msgid "All"
+#~ msgstr "બધા"
+
+#~ msgid "Awards"
+#~ msgstr "ઇનામો"
+
+#~ msgid "Skills"
+#~ msgstr "કૌશલ્યો"
+
+#~ msgid "shown (max 300)"
+#~ msgstr "બતાવેલ (મહત્તમ 300)"
+
+#~ msgid "Runs fully on-premise. No data leaves this network."
+#~ msgstr "સંપૂર્ણપણે ઓન-પ્રિમાઇસ ચાલે છે. કોઈ ડેટા આ નેટવર્ક છોડતો નથી."
+

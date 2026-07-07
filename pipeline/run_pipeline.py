@@ -23,6 +23,8 @@ import re
 import datetime as dt
 import psycopg2
 import psycopg2.extras
+import zlib
+import base64
 
 # --- Gujarati -> Western digit map -----------------------------------------
 GUJ_DIGITS = str.maketrans("૦૧૨૩૪૫૬૭૮૯", "0123456789")
@@ -147,6 +149,30 @@ def load_people(cur, source_table, prefix, rank_band):
         appt = r.get("appointment_date")  # officers only
         present_date = r.get("police_station_present_date")  # employees
         batch_raw = r.get("batch")
+        
+        display_id = None
+        if source_table == "officer_details":
+            display_id = str(r.get("mode")) if r.get("mode") else None
+        else:
+            display_id = str(r.get("buckle_no")) if r.get("buckle_no") else None
+            
+        photo = r.get("photo")
+        if photo:
+            if isinstance(photo, memoryview):
+                photo = photo.tobytes()
+            if isinstance(photo, bytes):
+                try:
+                    # Some systems zlib compress blobs before DB insert
+                    if photo.startswith(b'\x78\x9c') or photo.startswith(b'x\x9c'):
+                        photo = zlib.decompress(photo)
+                except Exception:
+                    pass
+                b64 = base64.b64encode(photo).decode('utf-8')
+                mime = 'image/jpeg'
+                if photo.startswith(b'\x89PNG'):
+                    mime = 'image/png'
+                photo = f"data:{mime};base64,{b64}"
+            
         flags = []
         if not dob:
             flags.append("dob")
@@ -170,12 +196,13 @@ def load_people(cur, source_table, prefix, rank_band):
         appt_eff = appt or present_date
         cur.execute("""
             INSERT INTO clean.person
-              (person_id, source_table, source_id, rank_band, rank_code, rank_raw,
+              (person_id, source_table, source_id, display_id, rank_band, rank_code, rank_raw,
                full_name_raw, full_name_gu, honorific, current_station_id, gender,
                dob, age_years, appointment_date, years_of_service, study_raw, study_en,
-               batch_raw, batch_year, missing_flags, is_active, last_updated_at)
-            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,TRUE,now())
+               batch_raw, batch_year, missing_flags, photo, is_active, last_updated_at)
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,TRUE,now())
             ON CONFLICT (source_table, source_id) DO UPDATE SET
+               display_id=EXCLUDED.display_id,
                rank_code=EXCLUDED.rank_code, rank_raw=EXCLUDED.rank_raw,
                full_name_raw=EXCLUDED.full_name_raw, full_name_gu=EXCLUDED.full_name_gu,
                honorific=EXCLUDED.honorific,
@@ -185,15 +212,15 @@ def load_people(cur, source_table, prefix, rank_band):
                years_of_service=EXCLUDED.years_of_service,
                study_raw=EXCLUDED.study_raw, study_en=EXCLUDED.study_en,
                batch_raw=EXCLUDED.batch_raw, batch_year=EXCLUDED.batch_year,
-               missing_flags=EXCLUDED.missing_flags, last_updated_at=now();
+               missing_flags=EXCLUDED.missing_flags, photo=EXCLUDED.photo, last_updated_at=now();
         """, (
-            pid, source_table, r["id"], rank_band,
+            pid, source_table, r["id"], display_id, rank_band,
             r.get("designation"), r.get("designation"),
             r.get("name"), clean_name, honorific,
             r.get("police_station_branch_id"), r.get("gender"),
             dob, age_from_dob(dob), appt, yos,
             r.get("study"), norm_study(r.get("study")),
-            batch_raw, batch_year, flags,
+            batch_raw, batch_year, flags, photo
         ))
 
 
@@ -235,17 +262,29 @@ def load_performance(cur):
         FROM clean.person p
         LEFT JOIN (
             SELECT 'O-'||officer_id pid, count(*) cnt, max(award_date) last_dt
-            FROM public.officer_awards GROUP BY officer_id
+            FROM public.officer_awards 
+            WHERE lower(regexp_replace(award_name, '\\s+', '', 'g')) NOT IN ('nill', 'nil', 'નીલ', 'na', 'none', '', '-', 'no')
+              AND award_name IS NOT NULL
+            GROUP BY officer_id
             UNION ALL
             SELECT 'E-'||employee_id pid, count(*) cnt, max(award_date) last_dt
-            FROM public.employee_awards GROUP BY employee_id
+            FROM public.employee_awards 
+            WHERE lower(regexp_replace(award_name, '\\s+', '', 'g')) NOT IN ('nill', 'nil', 'નીલ', 'na', 'none', '', '-', 'no')
+              AND award_name IS NOT NULL
+            GROUP BY employee_id
         ) a ON a.pid = p.person_id
         LEFT JOIN (
             SELECT 'O-'||officer_id pid, count(*) cnt, max(punishment_date) last_dt
-            FROM public.officer_punishments GROUP BY officer_id
+            FROM public.officer_punishments 
+            WHERE lower(regexp_replace(punishment_type, '\\s+', '', 'g')) NOT IN ('nill', 'nil', 'નીલ', 'na', 'none', '', '-', 'no')
+              AND punishment_type IS NOT NULL
+            GROUP BY officer_id
             UNION ALL
             SELECT 'E-'||employee_id pid, count(*) cnt, max(punishment_date) last_dt
-            FROM public.employee_punishments GROUP BY employee_id
+            FROM public.employee_punishments 
+            WHERE lower(regexp_replace(punishment_type, '\\s+', '', 'g')) NOT IN ('nill', 'nil', 'નીલ', 'na', 'none', '', '-', 'no')
+              AND punishment_type IS NOT NULL
+            GROUP BY employee_id
         ) pu ON pu.pid = p.person_id
         ON CONFLICT (person_id) DO UPDATE SET
             awards_count=EXCLUDED.awards_count,

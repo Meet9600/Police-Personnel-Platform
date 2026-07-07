@@ -206,12 +206,18 @@ class NLQEngine:
                 for v_word in vocab_tokens_en + vocab_tokens_gu:
                     sim = _similarity(t_word, v_word)
                     if sim > 0.70:
-                        score = sim
+                        # Small penalty for extra words to prefer exact, shorter station names
+                        penalty = 0.01 * min(len(vocab_tokens_en), len(vocab_tokens_gu))
+                        score = sim - penalty
+                        # Boost if the station name literally starts with the searched keyword
+                        if name_en.startswith(t_word) or name_gu.startswith(t_word):
+                            score += 0.02
+
                         if score > best_score:
                             best_score = score
                             best_station = s
 
-        return best_station
+        return best_station, best_score
 
     def _match_division(self, text):
         tokens = _tokenize(text)
@@ -248,7 +254,7 @@ class NLQEngine:
                             best_score = score
                             best_division = d
 
-        return best_division
+        return best_division, best_score
 
     def _match_rank(self, text):
         tokens = _tokenize(text)
@@ -408,8 +414,8 @@ class NLQEngine:
         ql = _lower(q)
         q_norm = _normalize_guj(ql)
         
-        station = self._match_station(q)
-        division = self._match_division(q)
+        station, station_score = self._match_station(q)
+        division, division_score = self._match_division(q)
         rank = self._match_rank(q)
         spec = self._match_spec(q)
 
@@ -580,8 +586,19 @@ class NLQEngine:
         if has_filter:
             scores["list_personnel"] += 1.0
 
+        # Detect explicit 'division' intent to override accidental station matches
+        if division and station:
+            q_words = set(q_norm.split())
+            if any(w in q_words for w in ["વિભાગ", "division", "div"]):
+                station = None
+
         # Select highest intent
         best_intent, best_score = max(scores.items(), key=lambda x: x[1])
+
+        # 5. Determine primary intent
+        if rank or spec or station or division or min_years or max_years or min_age or max_age:
+            best_intent = "list_personnel"
+            best_score = max(best_score, 2.0)
 
         # Verification threshold
         confidence_threshold = 2.0
