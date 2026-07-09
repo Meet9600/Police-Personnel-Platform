@@ -134,9 +134,21 @@ def create_app():
         rank_labels = json.dumps([r['label'] for r in rank_chart_data])
         rank_values = json.dumps([r['value'] for r in rank_chart_data])
 
+        spec_chart_data = query("""
+            SELECT sr.spec_name_en AS label, count(ps.person_id) AS value
+            FROM clean.specialization_ref sr
+            JOIN clean.person_specialization ps ON sr.spec_code = ps.spec_code
+            WHERE sr.spec_code <> 'UNCLASSIFIED'
+            GROUP BY sr.spec_name_en
+            ORDER BY value DESC
+        """)
+        spec_labels = json.dumps([r['label'] for r in spec_chart_data])
+        spec_values = json.dumps([r['value'] for r in spec_chart_data])
+
         return render_template("dashboard.html", stats=stats, 
                                div_labels=div_labels, div_values=div_values,
-                               rank_labels=rank_labels, rank_values=rank_values)
+                               rank_labels=rank_labels, rank_values=rank_values,
+                               spec_labels=spec_labels, spec_values=spec_values)
 
     # ---- recommendation ----
     @app.route("/recommend", methods=["GET", "POST"])
@@ -222,6 +234,8 @@ def create_app():
         station = request.args.get("station", "")
         min_years = request.args.get("min_years", "")
         max_years = request.args.get("max_years", "")
+        awards_min = request.args.get("awards_min", "")
+        clean_record = request.args.get("clean_record") == "on"
         where, params = ["1=1"], []
         sql = """
             SELECT v.person_id, p.display_id, p.full_name_gu AS name, v.rank_code, v.rank_band,
@@ -242,6 +256,10 @@ def create_app():
             where.append("v.years_of_service >= %s"); params.append(int(min_years))
         if max_years and max_years.isdigit():
             where.append("v.years_of_service <= %s"); params.append(int(max_years))
+        if awards_min and awards_min.isdigit():
+            where.append("v.awards_count >= %s"); params.append(int(awards_min))
+        if clean_record:
+            where.append("v.punishments_count = 0")
 
         rows = query(sql.format(where=" AND ".join(where)), params)
         ranks = query("SELECT rank_code FROM clean.rank_ref ORDER BY rank_order DESC")
@@ -249,7 +267,8 @@ def create_app():
                       "WHERE spec_code<>'UNCLASSIFIED' ORDER BY spec_code")
         stations = query("SELECT station_id, name_en FROM clean.dim_station ORDER BY name_en")
         return render_template("personnel.html", rows=rows, ranks=ranks, specs=specs, stations=stations,
-                               sel_rank=rank, sel_spec=spec, sel_station=station, sel_min_years=min_years, sel_max_years=max_years)
+                               sel_rank=rank, sel_spec=spec, sel_station=station, sel_min_years=min_years, sel_max_years=max_years,
+                               sel_awards_min=awards_min, sel_clean_record=clean_record)
 
     @app.route("/debug_run")
     def debug_run():

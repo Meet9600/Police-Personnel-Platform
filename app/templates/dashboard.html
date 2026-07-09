@@ -76,6 +76,15 @@
   </div>
 </div>
 
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-5 sm:gap-6 mb-12">
+  <div class="card p-5 sm:p-6 lg:col-span-2">
+    <h3 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-4">{{ _('Force Specializations') }}</h3>
+    <div class="relative h-64">
+      <canvas id="specChart"></canvas>
+    </div>
+  </div>
+</div>
+
 <div class="page-eyebrow mb-4">{{ _('Intelligence Tools') }}</div>
 <h2 class="text-xl font-extrabold text-slate-900 mb-6 tracking-tight">{{ _('Quick Actions') }}</h2>
 <div class="grid md:grid-cols-2 gap-5 sm:gap-6">
@@ -118,6 +127,8 @@ document.addEventListener("DOMContentLoaded", function() {
   const divValues = {{ div_values|safe }};
   const rankLabels = {{ rank_labels|safe }};
   const rankValues = {{ rank_values|safe }};
+  const specLabels = {{ spec_labels|safe }};
+  const specValues = {{ spec_values|safe }};
 
   // Modern soft colors
   const bgColors = [
@@ -176,6 +187,33 @@ document.addEventListener("DOMContentLoaded", function() {
       maintainAspectRatio: false,
       plugins: {
         legend: { position: 'right' }
+      }
+    }
+  });
+
+  // Specializations Bar Chart
+  const ctxSpec = document.getElementById('specChart').getContext('2d');
+  new Chart(ctxSpec, {
+    type: 'bar',
+    data: {
+      labels: specLabels,
+      datasets: [{
+        label: '{{ _("Personnel Count") }}',
+        data: specValues,
+        backgroundColor: bgColors[2],
+        borderColor: borderColors[2],
+        borderWidth: 1,
+        borderRadius: 4
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false }
+      },
+      scales: {
+        y: { beginAtZero: true }
       }
     }
   });

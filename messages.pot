@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-07-06 15:51+0530\n"
+"POT-Creation-Date: 2026-07-09 16:31+0530\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -25,12 +25,46 @@ msgstr ""
 msgid "Invalid username or password."
 msgstr ""
 
-#: app/main.py:191
+#: app/main.py:203
 msgid "Please complete the form correctly."
 msgstr ""
 
-#: app/main.py:270
+#: app/main.py:307
 msgid "Personnel not found."
+msgstr ""
+
+#: app/recommender.py:80
+#, python-format
+msgid "covers %(num)d/%(total)d required skills: %(skills)s"
+msgstr ""
+
+#: app/recommender.py:82
+msgid "no direct skill match"
+msgstr ""
+
+#: app/recommender.py:87
+#, python-format
+msgid "fills required rank %(rank)s"
+msgstr ""
+
+#: app/recommender.py:95
+#, python-format
+msgid "%(yos)d yrs service"
+msgstr ""
+
+#: app/recommender.py:100
+#, python-format
+msgid "%(count)d award(s)"
+msgstr ""
+
+#: app/recommender.py:107
+#, python-format
+msgid "%(count)d punishment(s) on record"
+msgstr ""
+
+#: app/recommender.py:136
+#, python-format
+msgid "No active personnel found at %(target)s."
 msgstr ""
 
 #: app/templates/ask.html:2 app/templates/ask.html:10
@@ -180,36 +214,44 @@ msgstr ""
 msgid "Force Breakdown by Rank"
 msgstr ""
 
-#: app/templates/dashboard.html:79
+#: app/templates/dashboard.html:81
+msgid "Force Specializations"
+msgstr ""
+
+#: app/templates/dashboard.html:88
 msgid "Intelligence Tools"
 msgstr ""
 
-#: app/templates/dashboard.html:80
+#: app/templates/dashboard.html:89
 msgid "Quick Actions"
 msgstr ""
 
-#: app/templates/dashboard.html:91
+#: app/templates/dashboard.html:100
 msgid "Construct Team Profile"
 msgstr ""
 
-#: app/templates/dashboard.html:93
+#: app/templates/dashboard.html:102
 msgid ""
 "Input specific case requirements to assemble the most capable team based "
 "on skills, rank, and availability. Includes transparent reasoning."
 msgstr ""
 
-#: app/templates/dashboard.html:106
+#: app/templates/dashboard.html:115
 msgid "Query Database"
 msgstr ""
 
-#: app/templates/dashboard.html:108
+#: app/templates/dashboard.html:117
 msgid ""
 "Extract specific information using natural language. Query exact "
 "headcounts, specialties, pending transfers, and operational metrics."
 msgstr ""
 
-#: app/templates/dashboard.html:141
+#: app/templates/dashboard.html:152
 msgid "Personnel"
+msgstr ""
+
+#: app/templates/dashboard.html:201
+msgid "Personnel Count"
 msgstr ""
 
 #: app/templates/login.html:2 app/templates/login.html:42
@@ -282,9 +324,9 @@ msgstr ""
 msgid "Complete roster of active district personnel."
 msgstr ""
 
-#: app/templates/personnel.html:19 app/templates/personnel.html:64
-#: app/templates/profile.html:10 app/templates/profile.html:88
-#: app/templates/recommend.html:145 app/templates/recommend.html:276
+#: app/templates/personnel.html:19 app/templates/personnel.html:74
+#: app/templates/profile.html:24 app/templates/recommend.html:145
+#: app/templates/recommend.html:284
 msgid "Rank"
 msgstr ""
 
@@ -325,42 +367,55 @@ msgid "Max Yrs"
 msgstr ""
 
 #: app/templates/personnel.html:53
+msgid "Min Awards"
+msgstr ""
+
+#: app/templates/personnel.html:58
+msgid "Clean Record Only"
+msgstr ""
+
+#: app/templates/personnel.html:63
 msgid "Apply Filter"
 msgstr ""
 
-#: app/templates/personnel.html:62
+#: app/templates/personnel.html:72
 msgid "Identification"
 msgstr ""
 
-#: app/templates/personnel.html:63 app/templates/recommend.html:145
+#: app/templates/personnel.html:73 app/templates/recommend.html:145
 msgid "Name"
 msgstr ""
 
-#: app/templates/personnel.html:65 app/templates/profile.html:38
+#: app/templates/personnel.html:75 app/templates/profile.html:60
 msgid "Current Station"
 msgstr ""
 
-#: app/templates/personnel.html:66
+#: app/templates/personnel.html:76
 msgid "Tenure"
 msgstr ""
 
-#: app/templates/personnel.html:67
+#: app/templates/personnel.html:77
 msgid "Commendations"
 msgstr ""
 
-#: app/templates/personnel.html:68
+#: app/templates/personnel.html:78
 msgid "Specialties"
 msgstr ""
 
-#: app/templates/personnel.html:84
+#: app/templates/personnel.html:88 app/templates/profile.html:48
+#: app/templates/profile.html:53
+msgid "N/A"
+msgstr ""
+
+#: app/templates/personnel.html:100
 msgid "yrs"
 msgstr ""
 
-#: app/templates/personnel.html:105
+#: app/templates/personnel.html:121
 msgid "No personnel match the selected filters."
 msgstr ""
 
-#: app/templates/personnel.html:110
+#: app/templates/personnel.html:126
 msgid "records displayed"
 msgstr ""
 
@@ -372,83 +427,87 @@ msgstr ""
 msgid "Back to Directory"
 msgstr ""
 
-#: app/templates/profile.html:19
+#: app/templates/profile.html:10
+msgid "Save as PDF"
+msgstr ""
+
+#: app/templates/profile.html:36
 msgid "Personal Details"
 msgstr ""
 
-#: app/templates/profile.html:22
+#: app/templates/profile.html:39
 msgid "Age"
 msgstr ""
 
-#: app/templates/profile.html:23 app/templates/profile.html:35
+#: app/templates/profile.html:40 app/templates/profile.html:57
 msgid "Years"
 msgstr ""
 
-#: app/templates/profile.html:26
+#: app/templates/profile.html:43
 msgid "Gender"
 msgstr ""
 
-#: app/templates/profile.html:27
+#: app/templates/profile.html:45
 msgid "Male"
 msgstr ""
 
-#: app/templates/profile.html:27
+#: app/templates/profile.html:46
 msgid "Female"
 msgstr ""
 
-#: app/templates/profile.html:30
+#: app/templates/profile.html:52
 msgid "Education"
 msgstr ""
 
-#: app/templates/profile.html:34
+#: app/templates/profile.html:56
 msgid "Years of Service"
 msgstr ""
 
-#: app/templates/profile.html:45
+#: app/templates/profile.html:67
 msgid "Specializations"
 msgstr ""
 
-#: app/templates/profile.html:53
+#: app/templates/profile.html:75
 msgid "None recorded"
 msgstr ""
 
-#: app/templates/profile.html:58
+#: app/templates/profile.html:80
 msgid "Performance Summary"
 msgstr ""
 
-#: app/templates/profile.html:62
+#: app/templates/profile.html:84
 msgid "Awards"
 msgstr ""
 
-#: app/templates/profile.html:66
+#: app/templates/profile.html:88
 msgid "Punishments"
 msgstr ""
 
-#: app/templates/profile.html:76
+#: app/templates/profile.html:98
 msgid "Posting History"
 msgstr ""
 
-#: app/templates/profile.html:85
+#: app/templates/profile.html:107
 msgid "Present"
 msgstr ""
 
-#: app/templates/profile.html:89
-msgid "Role"
+#: app/templates/profile.html:111
+msgid "Remarks"
 msgstr ""
 
-#: app/templates/profile.html:93
+#: app/templates/profile.html:116
 msgid "No posting history found."
 msgstr ""
 
-#: app/templates/profile.html:100
+#: app/templates/profile.html:123
 msgid "Detailed Performance Records"
 msgstr ""
 
-#: app/templates/profile.html:106
+#: app/templates/profile.html:129
 msgid "Award"
 msgstr ""
 
-#: app/templates/profile.html:106
+#: app/templates/profile.html:129
 msgid "Punishment"
 msgstr ""
 
@@ -528,7 +587,7 @@ msgstr ""
 msgid "Resource Gap Detected"
 msgstr ""
 
-#: app/templates/recommend.html:133 app/templates/recommend.html:265
+#: app/templates/recommend.html:133 app/templates/recommend.html:273
 msgid "The local station cannot fulfill these requirements:"
 msgstr ""
 
@@ -548,89 +607,89 @@ msgstr ""
 msgid "Commanding Officer"
 msgstr ""
 
-#: app/templates/recommend.html:182 app/templates/recommend.html:288
+#: app/templates/recommend.html:186 app/templates/recommend.html:296
 msgid "Team Leader"
 msgstr ""
 
-#: app/templates/recommend.html:189 app/templates/recommend.html:279
+#: app/templates/recommend.html:193 app/templates/recommend.html:287
 msgid "AI Rating"
 msgstr ""
 
-#: app/templates/recommend.html:199
+#: app/templates/recommend.html:203
 msgid "Task Force Members"
 msgstr ""
 
-#: app/templates/recommend.html:211
+#: app/templates/recommend.html:219
 msgid "Member"
 msgstr ""
 
-#: app/templates/recommend.html:218
+#: app/templates/recommend.html:226
 msgid "Rating"
 msgstr ""
 
-#: app/templates/recommend.html:239
+#: app/templates/recommend.html:247
 msgid "GUJARAT POLICE DEPARTMENT"
 msgstr ""
 
-#: app/templates/recommend.html:240
+#: app/templates/recommend.html:248
 msgid "Official Team Recommendation Report"
 msgstr ""
 
-#: app/templates/recommend.html:249
+#: app/templates/recommend.html:257
 msgid "Target Station / Division"
 msgstr ""
 
-#: app/templates/recommend.html:251
+#: app/templates/recommend.html:259
 msgid "Skill Coverage"
 msgstr ""
 
-#: app/templates/recommend.html:254
+#: app/templates/recommend.html:262
 msgid "Date Generated"
 msgstr ""
 
-#: app/templates/recommend.html:256
+#: app/templates/recommend.html:264
 msgid "STATUS: APPROVED"
 msgstr ""
 
-#: app/templates/recommend.html:263
+#: app/templates/recommend.html:271
 msgid "Resource Gap Warning"
 msgstr ""
 
-#: app/templates/recommend.html:271
+#: app/templates/recommend.html:279
 msgid "Task Force Personnel"
 msgstr ""
 
-#: app/templates/recommend.html:277
+#: app/templates/recommend.html:285
 msgid "Service ID"
 msgstr ""
 
-#: app/templates/recommend.html:278
+#: app/templates/recommend.html:286
 msgid "Officer Name"
 msgstr ""
 
-#: app/templates/recommend.html:300
+#: app/templates/recommend.html:308
 msgid "CONFIDENTIAL — FOR INTERNAL SECURITY FORCE USE ONLY"
 msgstr ""
 
-#: app/templates/recommend.html:301
+#: app/templates/recommend.html:309
 msgid "Generated by Police Personnel AI Platform"
 msgstr ""
 
-#: app/templates/recommend.html:309
+#: app/templates/recommend.html:317
 msgid "Awaiting Parameters"
 msgstr ""
 
-#: app/templates/recommend.html:310
+#: app/templates/recommend.html:318
 msgid ""
 "Configure the operational requirements above to generate an optimized AI "
 "team roster."
 msgstr ""
 
-#: app/templates/recommend.html:372
+#: app/templates/recommend.html:380
 msgid "Search and select stations or divisions..."
 msgstr ""
 
-#: app/templates/recommend.html:393
+#: app/templates/recommend.html:401
 msgid "Search and select required skills..."
 msgstr ""
 

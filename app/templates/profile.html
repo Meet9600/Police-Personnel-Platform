@@ -3,8 +3,12 @@
 {% block content %}
 <div class="mb-6">
   <div class="page-header mb-0">
-    <div class="page-eyebrow">
+    <div class="page-eyebrow flex justify-between items-center print-hidden">
       <a href="{{ url_for('personnel') }}" class="hover:underline text-slate-500">&larr; {{ _('Back to Directory') }}</a>
+      <button type="button" onclick="window.print()" class="bg-slate-800 text-white hover:bg-slate-700 cursor-pointer shadow-md rounded-lg transition-all flex items-center gap-2 px-4 py-1.5 font-bold text-xs uppercase tracking-wider border border-slate-900">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+        {{ _('Save as PDF') }}
+      </button>
     </div>
     <div class="flex items-center gap-6 mt-4">
       {% if person.photo %}
@@ -135,4 +139,14 @@
 
   </div>
 </div>
+
+<style>
+  @media print {
+    @page { size: A4 portrait; margin: 15mm; }
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    .print-hidden, nav, footer { display: none !important; }
+    body { background-color: white !important; }
+    .card { box-shadow: none !important; border: 1px solid #e2e8f0 !important; break-inside: avoid; margin-bottom: 20px; }
+  }
+</style>
 {% endblock %}

@@ -21,6 +21,7 @@ Pure local Postgres. No external calls.
 import psycopg2.extras
 
 from app.config import get_conn
+from flask_babel import gettext as _
 
 # ---- Scoring weights (sum the component scores; specialization dominates) ----
 W_SPEC      = 60.0   # fraction of requested specializations this person covers
@@ -39,7 +40,7 @@ def fetch_station_candidates(conn, station_ids=None, division_ids=None):
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
     cur.execute("""
         SELECT p.person_id, p.full_name_gu, p.rank_code, r.rank_band, r.rank_order,
-               p.years_of_service, p.age_years,
+               p.years_of_service, p.age_years, p.photo,
                COALESCE(perf.awards_count,0)      AS awards,
                COALESCE(perf.punishments_count,0) AS punishments,
                COALESCE(
@@ -76,15 +77,14 @@ def score_candidate(c, needed_specs, needed_rank=None):
         frac = len(matched) / len(needed_specs)
         score += W_SPEC * frac
         if matched:
-            reasons.append(f"covers {len(matched)}/{len(needed_specs)} required skills: "
-                           + ", ".join(sorted(matched)))
+            reasons.append(_("covers %(num)d/%(total)d required skills: %(skills)s", num=len(matched), total=len(needed_specs), skills=", ".join(sorted(matched))))
         else:
-            reasons.append("no direct skill match")
+            reasons.append(_("no direct skill match"))
 
     # Rank fit — does this person fill a still-needed rank slot?
     if needed_rank and c["rank_code"] == needed_rank:
         score += W_RANK
-        reasons.append(f"fills required rank {needed_rank}")
+        reasons.append(_("fills required rank %(rank)s", rank=needed_rank))
 
     # Experience (batch-derived; may be missing).
     yos = c["years_of_service"]
@@ -92,19 +92,19 @@ def score_candidate(c, needed_specs, needed_rank=None):
         yos = float(yos)
         exp = min(yos, EXPERIENCE_CAP_YEARS) / EXPERIENCE_CAP_YEARS
         score += W_EXPERIENCE * exp
-        reasons.append(f"{yos:.0f} yrs service")
+        reasons.append(_("%(yos)d yrs service", yos=int(yos)))
 
     # Awards (capped).
     if c["awards"]:
         score += W_AWARDS * min(c["awards"], AWARDS_CAP) / AWARDS_CAP
-        reasons.append(f"{c['awards']} award(s)")
+        reasons.append(_("%(count)d award(s)", count=c['awards']))
 
     # Clean-record bonus / punishment penalty.
     if c["punishments"] == 0:
         score += W_CLEAN
     else:
         score -= PUNISH_PENALTY * c["punishments"]
-        reasons.append(f"{c['punishments']} punishment(s) on record")
+        reasons.append(_("%(count)d punishment(s) on record", count=c['punishments']))
 
     return round(score, 2), reasons
 
@@ -133,7 +133,7 @@ def recommend_team(station_ids, division_ids, needed_specs, team_size, rank_mix=
         cur.close()
 
     if not candidates:
-        return {"error": f"No active personnel found at {target_name}."}
+        return {"error": _("No active personnel found at %(target)s.", target=target_name)}
 
     rank_mix = dict(rank_mix or {})
     chosen, chosen_ids = [], set()
@@ -244,6 +244,7 @@ def recommend_team(station_ids, division_ids, needed_specs, team_size, rank_mix=
                 "person_id": m["person"]["person_id"],
                 "name": m["person"]["full_name_gu"],
                 "rank": m["person"]["rank_code"],
+                "photo": m["person"]["photo"],
                 "score": m["score"],
                 "why": "; ".join(m["reasons"]),
             } for m in sorted(chosen, key=lambda x: (-x["person"]["rank_order"], -x["score"]))
