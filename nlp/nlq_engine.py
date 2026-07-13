@@ -21,6 +21,33 @@ import unicodedata
 import difflib
 from app.config import query
 
+import json
+import logging
+try:
+    from llama_cpp import Llama
+    _llm = None
+except ImportError:
+    Llama = None
+
+def get_llm():
+    global _llm
+    if _llm is not None:
+        return _llm
+    if Llama is None:
+        return None
+    try:
+        # Load the local model downloaded previously
+        _llm = Llama(
+            model_path="models/qwen2.5-3b-instruct-q4_k_m.gguf",
+            n_ctx=1024,
+            verbose=False
+        )
+    except Exception as e:
+        logging.error(f"Failed to load LLM: {e}")
+        return None
+    return _llm
+
+
 # --- Controlled vocab loaded once from the clean store ----------------------
 # (ranks, specializations, stations, divisions) — used to resolve entities in
 # the user's question to ids/codes safely.
@@ -31,6 +58,13 @@ def _load_vocab():
     specs = query("SELECT spec_code, spec_name_en, category FROM clean.specialization_ref")
     stations = query("SELECT station_id, name_en, name_raw FROM clean.dim_station")
     divisions = query("SELECT division_id, name_en, name_raw FROM clean.dim_division")
+    import json
+    try:
+        with open("scratch/stations_dump.json", "w") as f:
+            json.dump([dict(s) for s in stations], f, indent=2, default=str)
+    except Exception as e:
+        print(f"Failed to dump stations: {e}")
+    
     return {
         "ranks": ranks,
         "specs": specs,
@@ -102,6 +136,7 @@ def _clean_word(w):
 def _tokenize(text):
     if not text:
         return []
+    text = str(text).replace('.', '')
     normalized = _normalize_guj(_lower(text))
     tokens = []
     for w in normalized.split():
@@ -162,28 +197,50 @@ class NLQEngine:
         "dholka": "ધોળકા", "dhandhuka": "ધંધુકા", "bopal": "બોપલ",
         "mandal": "માંડલ", "detroj": "ડેટરોજ", "bavla": "બાવળા",
         "kanbha": "કણભા", "changodar": "ચાંગોદર",
+        # Common station words
+        "gidc": "જીઆઇડીસી", "g.i.d.c.": "જીઆઇડીસી",
+        "rural": "રૂરલ", "town": "ટાઉન",
+        "head": "હેડ", "quarter": "ક્વાર્ટર", "hq": "હેડ ક્વાર્ટર", "headquarters": "હેડ ક્વાર્ટર",
+        "police": "પોલીસ", "station": "સ્ટેશન", "po": "પો", "ste": "સ્ટે",
+        "reader": "રીડર", "cpi": "સીપીઆઇ", "c.p.i.": "સીપીઆઇ",
         # Extreme transliteration misspellings mapping to correct English
-        "sannad": "sanand", "sanad": "sanan", "saanand": "sanand",
+        "sannad": "sanand", "sanad": "sanand", "saanand": "sanand",
         "bopl": "bopal", "boopal": "bopal",
         "virmgam": "viramgam", "viramgaam": "viramgam",
         "ahmedabad": "ahmedabad", "ahmdabad": "ahmedabad", "amdavad": "ahmedabad",
         "dolka": "dholka", "dholkaa": "dholka",
+        # Ranks
+        "inspector": "ઇન્સ્પેક્ટર", "sub": "સબ", "assistant": "મદદનીશ",
+        "constable": "કોન્સ્ટેબલ", "jamadar": "જમાદાર", "armed": "સશસ્ત્ર", "unarmed": "નિઃશસ્ત્ર",
+        "lokrakshak": "લોકરક્ષક", "lr": "લોકરક્ષક", "pi": "પીઆઈ", "psi": "પીએસઆઈ", "asi": "એએસઆઈ",
+        # Specializations
+        "cyber": "સાયબર", "traffic": "ટ્રાફિક", "crime": "ક્રાઈમ", "investigation": "તપાસ",
+        "murder": "ખૂન", "theft": "ચોરી", "robbery": "લૂંટ", "women": "મહિલા", "safety": "સુરક્ષા",
+        "child": "બાળ", "welfare": "કલ્યાણ", "court": "કોર્ટ", "summons": "સમન્સ", "warrant": "વોરંટ",
+        "driver": "ડ્રાઈવર", "driving": "ડ્રાઈવર", "car": "ગાડી", "vehicle": "વાહન",
+        "computer": "કમ્પ્યુટર", "it": "આઇટી", "software": "સોફ્ટવેર", "hardware": "હાર્ડવેર",
+        "control": "કંટ્રોલ", "wireless": "વાયરલેસ", "radio": "રેડિયો",
+        "sog": "એસઓજી", "commando": "કમાન્ડો", "gunman": "ગનમેન", "dog": "ડોગ", "squad": "સ્ક્વોડ",
+        "armoury": "આર્મોરી", "guard": "ગાર્ડ", "vip": "વીઆઈપી"
     }
 
     def _apply_aliases(self, text):
         t = _lower(text)
-        for eng, guj in self.PLACE_ALIASES.items():
+        for eng in sorted(self.PLACE_ALIASES.keys(), key=len, reverse=True):
+            guj = self.PLACE_ALIASES[eng]
             if eng in t:
                 t = t.replace(eng, guj)
         return t
 
     def _match_station(self, text):
-        tokens = _tokenize(text)
-        stemmed_tokens = _stem_tokens(tokens)
-        stemmed_tokens = [self._apply_aliases(t) for t in stemmed_tokens]
+        raw_stemmed = _stem_tokens(_tokenize(text))
+        stemmed_tokens = []
+        for t in raw_stemmed:
+            aliased = self._apply_aliases(t)
+            stemmed_tokens.extend(_tokenize(aliased))
 
-        best_station = None
         best_score = 0.0
+        matches = []
 
         for s in self.vocab["stations"]:
             name_en = _lower(s.get("name_en") or "")
@@ -196,32 +253,43 @@ class NLQEngine:
             if _match_phrase_in_tokens(vocab_tokens_en, stemmed_tokens) or \
                _match_phrase_in_tokens(vocab_tokens_gu, stemmed_tokens):
                 score = 1.0 + len(vocab_tokens_en) / 100.0
-                if score > best_score:
-                    best_score = score
-                    best_station = s
-                    continue
+                matches.append((score, s))
+                if score > best_score: best_score = score
+                continue
 
-            # 2. Fuzzy match word by word (extreme typo tolerance)
-            for t_word in stemmed_tokens:
-                for v_word in vocab_tokens_en + vocab_tokens_gu:
-                    sim = _similarity(t_word, v_word)
-                    if sim > 0.70:
-                        # Small penalty for extra words to prefer exact, shorter station names
-                        penalty = 0.01 * min(len(vocab_tokens_en), len(vocab_tokens_gu))
-                        score = sim - penalty
-                        # Boost if the station name literally starts with the searched keyword
-                        if name_en.startswith(t_word) or name_gu.startswith(t_word):
-                            score += 0.02
+            # 2. Fuzzy match word by word (aggregate score for all query tokens)
+            if stemmed_tokens:
+                total_sim_en = sum(max([_similarity(t, v) for v in vocab_tokens_en] + [0]) for t in stemmed_tokens)
+                avg_sim_en = total_sim_en / len(stemmed_tokens) if stemmed_tokens else 0.0
 
-                        if score > best_score:
-                            best_score = score
-                            best_station = s
+                total_sim_gu = sum(max([_similarity(t, v) for v in vocab_tokens_gu] + [0]) for t in stemmed_tokens)
+                avg_sim_gu = total_sim_gu / len(stemmed_tokens) if stemmed_tokens else 0.0
 
-        return best_station, best_score
+                avg_sim = max(avg_sim_en, avg_sim_gu)
+                if avg_sim > 0.70:
+                    # Penalize slightly for extra unmatched words in the vocab
+                    penalty = 0.01 * max(0, min(len(vocab_tokens_en), len(vocab_tokens_gu)) - len(stemmed_tokens))
+                    score = avg_sim - penalty
+                    
+                    if name_en.startswith(stemmed_tokens[0]) or name_gu.startswith(stemmed_tokens[0]):
+                        score += 0.02
+
+                    matches.append((score, s))
+                    if score > best_score: best_score = score
+
+        if not matches:
+            return [], 0.0
+            
+        # Return all stations that are within 0.05 of the best score
+        best_stations = [s for score, s in matches if best_score - score < 0.05]
+        return best_stations, best_score
 
     def _match_division(self, text):
-        tokens = _tokenize(text)
-        stemmed_tokens = [self._apply_aliases(t) for t in _stem_tokens(tokens)]
+        raw_stemmed = _stem_tokens(_tokenize(text))
+        stemmed_tokens = []
+        for t in raw_stemmed:
+            aliased = self._apply_aliases(t)
+            stemmed_tokens.extend(_tokenize(aliased))
 
         best_division = None
         best_score = 0.0
@@ -245,14 +313,19 @@ class NLQEngine:
                     best_division = d
                     continue
 
-            for t_word in stemmed_tokens:
-                for v_word in vocab_tokens_en + vocab_tokens_gu:
-                    sim = _similarity(t_word, v_word)
-                    if sim > 0.70:
-                        score = sim
-                        if score > best_score:
-                            best_score = score
-                            best_division = d
+            if stemmed_tokens:
+                total_sim_en = sum(max([_similarity(t, v) for v in vocab_tokens_en] + [0]) for t in stemmed_tokens)
+                avg_sim_en = total_sim_en / len(stemmed_tokens) if stemmed_tokens else 0.0
+
+                total_sim_gu = sum(max([_similarity(t, v) for v in vocab_tokens_gu] + [0]) for t in stemmed_tokens)
+                avg_sim_gu = total_sim_gu / len(stemmed_tokens) if stemmed_tokens else 0.0
+
+                avg_sim = max(avg_sim_en, avg_sim_gu)
+                if avg_sim > 0.70:
+                    score = avg_sim
+                    if score > best_score:
+                        best_score = score
+                        best_division = d
 
         return best_division, best_score
 
@@ -260,49 +333,62 @@ class NLQEngine:
         tokens = _tokenize(text)
         stemmed_tokens = _stem_tokens(tokens)
         
-        # Rank mappings defined as tokenized lists
+        # Rank mappings defined as tokenized lists (consolidated for duplicate codes)
         rank_mapping = {
-            # PI
             "PI": [["pi"], ["police", "inspector"], ["inspector"], ["પીઆઈ"], ["પોલીસ", "ઇન્સ્પેક્ટર"], ["ઇન્સ્પેક્ટર"], ["ઈન્સ્પેક્ટર"]],
-            # PSI
             "PSI": [["psi"], ["police", "sub", "inspector"], ["police", "sub-inspector"], ["sub", "inspector"], ["sub-inspector"], ["પીએસઆઈ"], ["પોલીસ", "સબ", "ઇન્સ્પેક્ટર"], ["પોલીસ", "સબ", "ઈન્સ્પેક્ટર"], ["સબ", "ઇન્સ્પેક્ટર"], ["સબ", "ઈન્સ્પેક્ટર"]],
-            # AASI
             "AASI": [["aasi"], ["armed", "assistant", "sub", "inspector"], ["armed", "assistant", "sub-inspector"], ["એએએસઆઈ"], ["સશસ્ત્ર", "મદદનીશ", "સબ", "ઇન્સ્પેક્ટર"]],
-            # UASI
-            "UASI": [["uasi"], ["unarmed", "assistant", "sub", "inspector"], ["unarmed", "assistant", "sub-inspector"], ["યુએએસઆઈ"], ["નિઃશસ્ત્ર", "મદદનીશ", "સબ", "ઇન્સ્પેક્ટર"]],
-            # ASI
-            "UASI": [["asi"], ["assistant", "sub", "inspector"], ["assistant", "sub-inspector"], ["એએસઆઈ"], ["મદદનીશ", "સબ", "ઇન્સ્પેક્ટર"]],
-            # AHC
+            "UASI": [
+                ["uasi"], ["unarmed", "assistant", "sub", "inspector"], ["unarmed", "assistant", "sub-inspector"], ["યુએએસઆઈ"], ["નિઃશસ્ત્ર", "મદદનીશ", "સબ", "ઇન્સ્પેક્ટર"],
+                ["asi"], ["assistant", "sub", "inspector"], ["assistant", "sub-inspector"], ["એએસઆઈ"], ["મદદનીશ", "સબ", "ઇન્સ્પેક્ટર"]
+            ],
             "AHC": [["ahc"], ["armed", "head", "constable"], ["સશસ્ત્ર", "હેડ", "કોન્સ્ટેબલ"]],
-            # UHC
-            "UHC": [["uhc"], ["unarmed", "head", "constable"], ["નિઃશસ્ત્ર", "હેડ", "કોન્સ્ટેબલ"]],
-            # HC
-            "UHC": [["hc"], ["head", "constable"], ["jamadar"], ["હેડ", "કોન્સ્ટેબલ"], ["જમાદાર"]],
-            # APC
+            "UHC": [
+                ["uhc"], ["unarmed", "head", "constable"], ["નિઃશસ્ત્ર", "હેડ", "કોન્સ્ટેબલ"],
+                ["hc"], ["head", "constable"], ["jamadar"], ["હેડ", "કોન્સ્ટેબલ"], ["જમાદાર"]
+            ],
             "APC": [["apc"], ["armed", "police", "constable"], ["armed", "constable"], ["સશસ્ત્ર", "પોલીસ", "કોન્સ્ટેબલ"], ["સશસ્ત્ર", "કોન્સ્ટેબલ"]],
-            # UPC
-            "UPC": [["upc"], ["unarmed", "police", "constable"], ["unarmed", "constable"], ["નિઃશસ્ત્ર", "પોલીસ", "કોન્સ્ટેબલ"], ["નિઃશસ્ત્ર", "કોન્સ્ટેબલ"]],
-            # PC
-            "UPC": [["pc"], ["constable"], ["police", "constable"], ["કોન્સ્ટેબલ"], ["પોલીસ", "કોન્સ્ટેબલ"]],
-            # ALR
+            "UPC": [
+                ["upc"], ["unarmed", "police", "constable"], ["unarmed", "constable"], ["નિઃશસ્ત્ર", "પોલીસ", "કોન્સ્ટેબલ"], ["નિઃશસ્ત્ર", "કોન્સ્ટેબલ"],
+                ["pc"], ["constable"], ["police", "constable"], ["કોન્સ્ટેબલ"], ["પોલીસ", "કોન્સ્ટેબલ"]
+            ],
             "ALR": [["alr"], ["armed", "lokrakshak"], ["Armed", "lr"], ["સશસ્ત્ર", "લોકરક્ષક"]],
-            # ULR
-            "ULR": [["ulr"], ["unarmed", "lokrakshak"], ["unarmed", "lr"], ["નિઃશસ્ત્ર", "લોકરક્ષક"]],
-            # LR
-            "ULR": [["lr"], ["lokrakshak"], ["lok", "rakshak"], ["લોકરક્ષક"]],
+            "ULR": [
+                ["ulr"], ["unarmed", "lokrakshak"], ["unarmed", "lr"], ["નિઃશસ્ત્ર", "લોકરક્ષક"],
+                ["lr"], ["lokrakshak"], ["lok", "rakshak"], ["લોકરક્ષક"]
+            ],
         }
 
-        # Check in order of specificity (longest phrase first)
-        all_matches = []
+        best_rank = None
+        best_score = 0.0
+
+        if not stemmed_tokens:
+            return None
+
+        # Fuzzy match over rank phrases
         for rank_code, phrases in rank_mapping.items():
             for p in phrases:
                 p_stemmed = _stem_tokens(p)
+                
+                # Exact subset match logic (bonus)
                 if _match_phrase_in_tokens(p_stemmed, stemmed_tokens):
-                    all_matches.append((rank_code, len(p_stemmed)))
-                    
-        if all_matches:
-            all_matches.sort(key=lambda x: -x[1])
-            return all_matches[0][0]
+                    score = 1.0 + len(p_stemmed) / 100.0
+                    if score > best_score:
+                        best_score = score
+                        best_rank = rank_code
+                    continue
+                
+                total_sim = sum(max([_similarity(t, v) for v in p_stemmed] + [0]) for t in stemmed_tokens)
+                avg_sim = total_sim / len(stemmed_tokens) if stemmed_tokens else 0.0
+                
+                if avg_sim > 0.70:
+                    score = avg_sim
+                    if score > best_score:
+                        best_score = score
+                        best_rank = rank_code
+
+        if best_rank:
+            return best_rank
 
         for r in self.vocab["ranks"]:
             code = r["rank_code"].lower()
@@ -382,20 +468,39 @@ class NLQEngine:
             ],
         }
 
-        all_matches = []
+        best_spec = None
+        best_score = 0.0
+
+        if not stemmed_tokens:
+            return None
+
+        # Fuzzy match over specialization phrases
         for spec_code, phrases in spec_mapping.items():
             for p in phrases:
                 p_stemmed = _stem_tokens(p)
+                
+                # Exact subset match logic (bonus)
                 if _match_phrase_in_tokens(p_stemmed, stemmed_tokens):
-                    all_matches.append((spec_code, len(p_stemmed)))
-                    
-        if all_matches:
-            all_matches.sort(key=lambda x: -x[1])
-            best_spec, best_len = all_matches[0]
-            # Special check to avoid false matches for single short English tokens
+                    score = 1.0 + len(p_stemmed) / 100.0
+                    if score > best_score:
+                        best_score = score
+                        best_spec = spec_code
+                    continue
+                
+                total_sim = sum(max([_similarity(t, v) for v in p_stemmed] + [0]) for t in stemmed_tokens)
+                avg_sim = total_sim / len(stemmed_tokens) if stemmed_tokens else 0.0
+                
+                if avg_sim > 0.70:
+                    score = avg_sim
+                    if score > best_score:
+                        best_score = score
+                        best_spec = spec_code
+
+        if best_spec:
             if best_spec == "IT_COMPUTER" and ["it"] in spec_mapping["IT_COMPUTER"]:
                 if "it" not in tokens:
-                    return None
+                    # Ignore if "it" wasn't explicitly mentioned as a word
+                    pass
             return best_spec
 
         for s in self.vocab["specs"]:
@@ -408,231 +513,114 @@ class NLQEngine:
     # ----- main entry -----
     def interpret(self, question):
         """
-        Map a natural-language question to ONE safe query template.
+        Map a natural-language question to ONE safe query template using local LLM.
         """
-        q = _norm(question)
-        ql = _lower(q)
-        q_norm = _normalize_guj(ql)
-        
-        station, station_score = self._match_station(q)
-        division, division_score = self._match_division(q)
-        rank = self._match_rank(q)
-        spec = self._match_spec(q)
-
-        # 1. Distinguish between Age and Years of Service / Experience
-        has_age_context = any(x in ql or x in q_norm for x in ["age", "old", "ઉંમર", "મોટી", "મોટો", "નાની", "નાનો"])
-
-        min_years = None
-        max_years = None
-        min_age = None
-        max_age = None
-
-        # Advanced Range & Extreme Parsing
-        if not has_age_context:
-            # Check for range: "between X and Y years"
-            range_match = re.search(r"(?:between|from)\s*(\d+)\s*(?:and|to|-)\s*(\d+)\s*(?:years?|વર્ષ)", ql)
-            if range_match:
-                min_years = int(range_match.group(1))
-                max_years = int(range_match.group(2))
-            else:
-                years_match_more = re.search(r"(?:more than|>|over|at least|minimum)\s*(\d+)\s*(?:years?|વર્ષ)", ql)
-                if not years_match_more:
-                    years_match_more = re.search(r"(\d+)\s*(?:years?|વર્ષ)(?:\s*(?:કે તેથી વધારે|કે તેથી વધુ|થી વધારે|થી વધુ|વધુ|અનુભવ|કામ|થી કામ|થી કામ કરતા|કામ કરતા))", q)
-                if not years_match_more:
-                    years_match_more = re.search(r"(\d+)\+\s*(?:years?|વર્ષ)", ql)
-                if years_match_more:
-                    min_years = int(years_match_more.group(1))
-
-                years_match_less = re.search(r"(?:less than|<|under|at most|maximum)\s*(\d+)\s*(?:years?|વર્ષ)", ql)
-                if not years_match_less:
-                    years_match_less = re.search(r"(\d+)\s*(?:years?|વર્ષ)(?:\s*(?:કે તેથી ઓછો|કે તેથી ઓછી|થી ઓછો|થી ઓછી|ઓછો|ઓછી))", q)
-                if years_match_less:
-                    max_years = int(years_match_less.group(1))
-                
-                # Extreme modifiers (most experienced / newest)
-                if any(k in ql for k in ["most experienced", "longest serving", "senior most", "સૌથી વધુ અનુભવી", "સૌથી જુના"]):
-                    min_years = 15 # Heuristic for highly experienced
-                elif any(k in ql for k in ["newest", "least experienced", "fresh", "સૌથી નવા", "સૌથી ઓછો અનુભવી"]):
-                    max_years = 2 # Heuristic for very new
-        
-        else:
-            range_match = re.search(r"(?:between|from)\s*(\d+)\s*(?:and|to|-)\s*(\d+)\s*(?:years?|વર્ષ)", ql)
-            if range_match:
-                min_age = int(range_match.group(1))
-                max_age = int(range_match.group(2))
-            else:
-                age_under = re.search(r"(?:under|<|younger than|below|at most)\s*(\d+)\s*(?:years?|વર્ષ)", ql)
-                if not age_under:
-                    age_under = re.search(r"(\d+)\s*(?:years?|વર્ષ)થી\s*(?:નાની|નાનો|ઓછી|ઓછો)", q)
-                if not age_under:
-                    age_under = re.search(r"(\d+)\s*(?:વર્ષ)\s*(?:થી ઓછી ઉંમર|થી નાની ઉંમર)", q)
-                if age_under:
-                    max_age = int(age_under.group(1))
-
-                age_over = re.search(r"(?:over|>|older than|above|at least)\s*(\d+)\s*(?:years?|વર્ષ)", ql)
-                if not age_over:
-                    age_over = re.search(r"(\d+)\s*(?:years?|વર્ષ)થી\s*(?:મોટી|મોટો|વધુ|વધારે)", q)
-                if not age_over:
-                    age_over = re.search(r"(\d+)\s*(?:વર્ષ)\s*(?:થી વધુ ઉંમર|થી મોટી ઉંમર)", q)
-                if age_over:
-                    min_age = int(age_over.group(1))
-                
-                # Extreme modifiers (youngest / oldest)
-                if any(k in ql for k in ["youngest", "સૌથી નાની", "સૌથી નાનો"]):
-                    max_age = 28 # Heuristic for youngest
-                elif any(k in ql for k in ["oldest", "સૌથી મોટી", "સૌથી મોટો"]):
-                    min_age = 50 # Heuristic for oldest
-
-        # 2. Gender extraction (plurals/stemmed compatible whole tokens)
-        gender = None
-        gender_f_keywords = ["female", "lady", "women", "woman", "she", "મહિલા", "સ્ત્રી", "બહેન"]
-        gender_m_keywords = ["male", "men", "man", "he", "પુરુષ", "પુરૂષ", "ભાઈ"]
-        
-        stemmed_tokens = _stem_tokens(_tokenize(q_norm))
-        
-        norm_f_kws = [_guj_stem(_normalize_guj(_lower(k))) for k in gender_f_keywords]
-        norm_m_kws = [_guj_stem(_normalize_guj(_lower(k))) for k in gender_m_keywords]
-        
-        if any(w in stemmed_tokens for w in norm_f_kws) or any(any(fk in t for fk in ["મહીલા", "સ્ત્રી", "બહેન"]) for t in stemmed_tokens if not t.isascii()):
-            gender = 'F'
-        elif any(w in stemmed_tokens for w in norm_m_kws) or any(any(mk in t for mk in ["પુરુષ", "પુરૂષ", "ભાઈ"]) for t in stemmed_tokens if not t.isascii()):
-            gender = 'M'
-
-        # 3. Disciplinary record (clean_record)
-        clean_record_terms = [
-            "clean record", "no punishment", "unpunished", "good conduct", "clean sheet",
-            "ક્લીન રેકોર્ડ", "કોઈ સજા", "સજા વગર", "સજા ન", "નિષ્કલંક", "કોઈ શિક્ષા", "શિક્ષા વગર"
-        ]
-        norm_clean_terms = [_normalize_guj(_lower(t)) for t in clean_record_terms]
-        
-        clean_record = False
-        for term in norm_clean_terms:
-            if term in q_norm or term in ql:
-                clean_record = True
-                break
-
-        # 4. Semantic trigger keywords
-        count_kws = ["how many", "count", "number of", "total", "quantity", "sum", "કેટલા", "કેટલી", "કેટલો", "કુલ સંખ્યા", "સંખ્યા", "ગણતરી", "ત્યાં કેટલા છે"]
-        list_kws = ["list", "show", "which", "who", "name", "get", "find", "display", "officer", "personnel", "all", "detail", "યાદી", "કોણ", "શોધો", "બતાવો", "બધા", "લિસ્ટ", "કર્મચારી", "અધિકારી", "નામ", "માહિતી આપો"]
-        award_kws = ["award", "top", "best", "highest", "medal", "reward", "honored", "honoured", "ઇનામ", "ઈનામ", "એવોર્ડ", "મેડલ", "પુરસ્કાર", "ઉત્કૃષ્ટ", "સૌથી વધુ સન્માનિત"]
-        vacancy_kws = ["vacancy", "vacant", "shortage", "empty", "need", "lack", "ખાલી", "જગ્યા", "ઘટ", "અછત", "જરૂરિયાત", "ખાલી જગ્યાઓ"]
-
-        norm_count_kws = [_normalize_guj(_lower(k)) for k in count_kws]
-        norm_list_kws = [_normalize_guj(_lower(k)) for k in list_kws]
-        norm_award_kws = [_normalize_guj(_lower(k)) for k in award_kws]
-        norm_vacancy_kws = [_normalize_guj(_lower(k)) for k in vacancy_kws]
-
-        wants_count = any(k in q_norm or k in ql or k in stemmed_tokens for k in norm_count_kws)
-        wants_list = any(k in q_norm or k in ql or k in stemmed_tokens for k in norm_list_kws)
-        wants_awards = any(k in q_norm or k in ql or k in stemmed_tokens for k in norm_award_kws)
-        wants_vacancy = any(k in q_norm or k in ql or k in stemmed_tokens for k in norm_vacancy_kws)
-
-        filters = {
-            "min_years": min_years, "max_years": max_years,
-            "min_age": min_age, "max_age": max_age,
-            "gender": gender, "clean_record": clean_record
-        }
-        has_filter = any(v is not None and v is not False for v in filters.values())
-
-        # 5. Intent Classifier Scoring
-        scores = {
-            "station_vacancy": 0.0,
-            "top_awards": 0.0,
-            "count_personnel": 0.0,
-            "list_personnel": 0.0
-        }
-
-        # Intent 1: station_vacancy
-        if wants_vacancy:
-            scores["station_vacancy"] += 3.0
-        if station:
-            scores["station_vacancy"] += 2.0
-        elif division:
-            scores["station_vacancy"] += 1.0
-
-        # Intent 2: top_awards
-        if wants_awards:
-            scores["top_awards"] += 3.0
-        if wants_list:
-            scores["top_awards"] += 1.0
-        if wants_count:
-            scores["top_awards"] += 0.5
-        if station or division:
-            scores["top_awards"] += 0.5
-        if has_filter:
-            scores["top_awards"] += 0.5
-
-        # Intent 3: count_personnel
-        if wants_count:
-            scores["count_personnel"] += 3.0
-        if rank:
-            scores["count_personnel"] += 1.0
-        if spec:
-            scores["count_personnel"] += 1.0
-        if station or division:
-            scores["count_personnel"] += 1.0
-        if has_filter:
-            scores["count_personnel"] += 1.0
-
-        # Intent 4: list_personnel
-        if wants_list:
-            scores["list_personnel"] += 3.0
-        if spec:
-            scores["list_personnel"] += 2.0
-        if rank:
-            scores["list_personnel"] += 1.0
-        if station or division:
-            scores["list_personnel"] += 1.0
-        if has_filter:
-            scores["list_personnel"] += 1.0
-
-        # Detect explicit 'division' intent to override accidental station matches
-        if division and station:
-            q_words = set(q_norm.split())
-            if any(w in q_words for w in ["વિભાગ", "division", "div"]):
-                station = None
-
-        # Select highest intent
-        best_intent, best_score = max(scores.items(), key=lambda x: x[1])
-
-        # 5. Determine primary intent
-        if rank or spec or station or division or min_years or max_years or min_age or max_age:
-            best_intent = "list_personnel"
-            best_score = max(best_score, 2.0)
-
-        # Verification threshold
-        confidence_threshold = 2.0
-        has_entities = bool(rank or spec or station or division or has_filter)
-        
-        is_nonsense = True
-        if best_score >= confidence_threshold:
-            if best_intent == "station_vacancy" and (station or division):
-                is_nonsense = False
-            elif best_intent == "top_awards":
-                is_nonsense = False
-            elif best_intent == "count_personnel" and has_entities:
-                is_nonsense = False
-            elif best_intent == "list_personnel" and (has_entities or wants_list):
-                is_nonsense = False
-
-        if is_nonsense:
+        llm = get_llm()
+        if not llm:
+            # Fallback if LLM is not loaded
             return NLQResult(
-                intent="unknown", interpretation="", columns=[], rows=[],
-                sql_label=None, ok=False,
-                message=("Could not confidently interpret the question. Try e.g. "
-                         "“How many female PSIs at <station>?”, “List officers in "
-                         "<division> with clean record”, or “<station> માં કેટલા અધિકારીઓ છે?”"),
+                intent="unknown", interpretation="", columns=[], rows=[], sql_label=None, ok=False,
+                message="Offline LLM model not loaded. Please check logs."
             )
 
-        # 6. Execute mapped template
-        if best_intent == "station_vacancy":
-            return self._q_vacancy(station, division)
-        elif best_intent == "top_awards":
-            return self._q_top_awards(station, division, filters)
-        elif best_intent == "count_personnel":
-            return self._q_count(rank, station, division, filters)
-        else:
-            return self._q_list(rank, spec, station, division, filters)
+        # Prepare context for the LLM
+        prompt = f"""<|im_start|>system
+You are an AI assistant that extracts information from police queries (English or Gujarati) into JSON.
+You must return ONLY a JSON object with these exact keys:
+- "intent": one of ["station_vacancy", "top_awards", "count_personnel", "list_personnel"]
+- "rank": The exact rank mentioned (e.g. PSI, PI, ASI) or null
+- "station": The police station mentioned or null
+- "division": The division mentioned or null
+- "spec": The specialization mentioned (e.g. Cyber, Traffic) or null
+- "filters": A dict with "clean_record" (bool), "is_past_posting" (bool), and "min_years" (int) or "max_years" (int), or null.
+
+Examples:
+"Show all cyber officers in Ahmedabad Rural" -> {{"intent": "list_personnel", "spec": "Cyber", "station": "Ahmedabad Rural", "rank": null, "division": null, "filters": null}}
+"How many PIs are vacant in Sanand Town?" -> {{"intent": "station_vacancy", "rank": "PI", "station": "Sanand Town", "spec": null, "division": null, "filters": null}}
+"Who used to work in traffic at Mandal?" -> {{"intent": "list_personnel", "spec": "Traffic", "station": "Mandal", "rank": null, "division": null, "filters": {{"is_past_posting": true}}}}
+"GIDC officers list" -> {{"intent": "list_personnel", "spec": null, "station": "GIDC", "rank": null, "division": null, "filters": null}}
+"list officers is in sanand GIDC" -> {{"intent": "list_personnel", "spec": null, "station": "Sanand GIDC", "rank": null, "division": null, "filters": null}}
+"Constables with more than 5 years experience in Dholka Rural" -> {{"intent": "list_personnel", "spec": null, "station": "Dholka Rural", "rank": "Constable", "division": null, "filters": {{"min_years": 5}}}}
+"List all ASIs in Viramgam division" -> {{"intent": "list_personnel", "spec": null, "station": null, "rank": "ASI", "division": "Viramgam", "filters": null}}
+"Show officers in Viramgam reader" -> {{"intent": "list_personnel", "spec": null, "station": "Viramgam reader", "rank": null, "division": null, "filters": null}}
+<|im_end|>
+<|im_start|>user
+{question}
+<|im_end|>
+<|im_start|>assistant
+"""
+        try:
+            response = llm(prompt, max_tokens=150, stop=["<|im_end|>"], echo=False)
+            output = response['choices'][0]['text'].strip()
+            # Clean up output to ensure it's just JSON
+            if "```json" in output:
+                output = output.split("```json")[1].split("```")[0].strip()
+            elif "```" in output:
+                output = output.split("```")[1].strip()
+                
+            data = json.loads(output)
+            
+            # Map LLM raw strings back to our DB dictionaries
+            q_stemmed = set(_stem_tokens(_tokenize(question)))
+            q_stemmed_aliased = set()
+            for t in q_stemmed:
+                q_stemmed_aliased.add(self._apply_aliases(t))
+                q_stemmed_aliased.add(t)
+
+            def _anti_hallucinate(extracted_str):
+                if not extracted_str: return None
+                ext_stemmed = set(_stem_tokens(_tokenize(str(extracted_str))))
+                for t in ext_stemmed:
+                    if t in q_stemmed_aliased or self._apply_aliases(t) in q_stemmed_aliased:
+                        return extracted_str
+                return None
+
+            rank_str = _anti_hallucinate(data.get("rank"))
+            station_str = _anti_hallucinate(data.get("station"))
+            div_str = _anti_hallucinate(data.get("division"))
+            spec_str = _anti_hallucinate(data.get("spec"))
+            intent = data.get("intent", "list_personnel")
+            filters = data.get("filters") or {}
+
+            # Anti-hallucinate is_past_posting
+            if filters and filters.get("is_past_posting"):
+                past_words = {"past", "previous", "used", "former", "earlier", "was", "worked", "old"}
+                if not past_words.intersection(q_stemmed):
+                    filters["is_past_posting"] = False
+
+            # Regex fallback for years of experience to prevent LLM misses
+            import re
+            if "min_years" not in filters or filters["min_years"] is None:
+                m_min = re.search(r'(?:more than|>|over)\s*(\d+)\s*year', question, re.IGNORECASE)
+                if m_min:
+                    filters["min_years"] = int(m_min.group(1))
+            
+            if "max_years" not in filters or filters["max_years"] is None:
+                m_max = re.search(r'(?:less than|<|under)\s*(\d+)\s*year', question, re.IGNORECASE)
+                if m_max:
+                    filters["max_years"] = int(m_max.group(1))
+
+            rank = self._match_rank(rank_str) if rank_str else None
+            stations, _ = self._match_station(station_str) if station_str else ([], 0)
+            division, _ = self._match_division(div_str) if div_str else (None, 0)
+            spec = self._match_spec(spec_str) if spec_str else None
+
+            if intent == "station_vacancy":
+                return self._q_vacancy(stations, division)
+            elif intent == "top_awards":
+                return self._q_top_awards(stations, division, filters)
+            elif intent == "count_personnel":
+                return self._q_count(rank, stations, division, filters)
+            else:
+                is_past = filters.get("is_past_posting", False) if filters else False
+                return self._q_list(rank, spec, stations, division, filters, is_past_posting=is_past)
+                
+        except Exception as e:
+            logging.error(f"LLM Error: {e}")
+            return NLQResult(
+                intent="unknown", interpretation="", columns=[], rows=[], sql_label=None, ok=False,
+                message=f"LLM failed to process query: {e}"
+            )
 
     def _apply_filters(self, filters, joins, where, params, desc):
         if not filters: return
@@ -658,14 +646,16 @@ class NLQEngine:
             desc.append("clean disciplinary record")
 
     # ----- safe parameterized templates (clean schema only, no PII) -----
-    def _q_count(self, rank, station, division, filters=None):
+    def _q_count(self, rank, stations, division, filters=None):
         where, params, desc = ["p.is_active"], [], []
         joins = ["LEFT JOIN clean.dim_station s ON s.station_id = p.current_station_id"]
         if rank:
             where.append("p.rank_code = %s"); params.append(rank); desc.append(f"rank {rank}")
-        if station:
-            where.append("p.current_station_id = %s"); params.append(station["station_id"])
-            desc.append(f"at {station['name_en']}")
+        if stations:
+            station_ids = tuple(s["station_id"] for s in stations)
+            names_en = " or ".join(s["name_en"] for s in stations)
+            where.append("p.current_station_id IN %s"); params.append(station_ids)
+            desc.append(f"at {names_en}")
         if division:
             where.append("s.division_id = %s"); params.append(division["division_id"])
             desc.append(f"in {division['name_en']} division")
@@ -684,7 +674,7 @@ class NLQEngine:
             columns=["count"], rows=rows, sql_label="count_personnel",
         )
 
-    def _q_list(self, rank, spec, station, division, filters=None, is_past_posting=False):
+    def _q_list(self, rank, spec, stations, division, filters=None, is_past_posting=False):
         where, params, desc = ["p.is_active"], [], []
         joins = ["LEFT JOIN clean.dim_station s ON s.station_id = p.current_station_id"]
         if spec:
@@ -693,20 +683,28 @@ class NLQEngine:
         if rank:
             where.append("p.rank_code = %s"); params.append(rank); desc.append(f"rank {rank}")
         
-        if station:
+        if stations:
+            station_ids = tuple(s["station_id"] for s in stations)
+            names_en = " or ".join(s["name_en"] for s in stations)
             if is_past_posting:
                 joins.append("JOIN clean.person_posting_history pph ON pph.person_id = p.person_id")
-                where.append("(pph.place_en ILIKE %s OR pph.place_raw ILIKE %s)"); 
-                params.extend([f"%{station['name_en']}%", f"%{station['name_en']}%"])
-                where.append("p.current_station_id != %s"); params.append(station["station_id"])
-                desc.append(f"transferred from {station['name_en']}")
+                
+                # To handle multiple stations in past postings: (place_en ILIKE %s OR place_en ILIKE %s ...)
+                like_clauses = []
+                for s in stations:
+                    like_clauses.extend(["pph.place_en ILIKE %s", "pph.place_raw ILIKE %s"])
+                    params.extend([f"%{s['name_en']}%", f"%{s['name_en']}%"])
+                
+                where.append(f"({' OR '.join(like_clauses)})")
+                where.append("p.current_station_id NOT IN %s"); params.append(station_ids)
+                desc.append(f"transferred from {names_en}")
             else:
-                where.append("p.current_station_id = %s"); params.append(station["station_id"])
-                desc.append(f"at {station['name_en']}")
+                where.append("p.current_station_id IN %s"); params.append(station_ids)
+                desc.append(f"at {names_en}")
                 
         if division:
             if is_past_posting:
-                if not station: # Only join if not already joined
+                if not stations: # Only join if not already joined
                     joins.append("JOIN clean.person_posting_history pph ON pph.person_id = p.person_id")
                 where.append("(pph.place_en ILIKE %s OR pph.place_raw ILIKE %s)"); 
                 params.extend([f"%{division['name_en']}%", f"%{division['name_en']}%"])
@@ -718,32 +716,36 @@ class NLQEngine:
                 
         self._apply_filters(filters, joins, where, params, desc)
         
+        joins.append("LEFT JOIN clean.rank_ref r ON p.rank_code = r.rank_code")
         sql = f"""
-            SELECT DISTINCT p.person_id, p.full_name_gu AS name, p.rank_code AS rank,
-                   s.name_en AS station, p.years_of_service
+            SELECT DISTINCT p.display_id AS buckle_no, p.full_name_gu AS name, p.rank_code AS rank,
+                   s.name_en AS station, p.years_of_service, r.rank_order
             FROM clean.person p
             {' '.join(joins)}
             WHERE {' AND '.join(where)}
-            ORDER BY p.rank_code, p.person_id
+            ORDER BY r.rank_order DESC, p.display_id
             LIMIT 200
         """
         rows = query(sql, params)
         return NLQResult(
             intent="list_personnel",
             interpretation="Personnel " + (", ".join(desc) if desc else "(all)"),
-            columns=["person_id", "name", "rank", "station", "years_of_service"],
+            columns=["buckle_no", "name", "rank", "station", "years_of_service"],
             rows=rows, sql_label="list_personnel",
         )
 
-    def _q_top_awards(self, station, division=None, filters=None):
+    def _q_top_awards(self, stations, division=None, filters=None):
         where, params, desc = ["p.is_active", "perf.awards_count > 0"], [], []
         joins = [
             "JOIN clean.person_performance perf ON perf.person_id = p.person_id",
-            "LEFT JOIN clean.dim_station s ON s.station_id = p.current_station_id"
+            "LEFT JOIN clean.dim_station s ON s.station_id = p.current_station_id",
+            "LEFT JOIN clean.rank_ref r ON p.rank_code = r.rank_code"
         ]
-        if station:
-            where.append("p.current_station_id = %s"); params.append(station["station_id"])
-            desc.append(f"at {station['name_en']}")
+        if stations:
+            station_ids = tuple(s["station_id"] for s in stations)
+            names_en = " or ".join(s["name_en"] for s in stations)
+            where.append("p.current_station_id IN %s"); params.append(station_ids)
+            desc.append(f"at {names_en}")
         elif division:
             where.append("s.division_id = %s"); params.append(division["division_id"])
             desc.append(f"in {division['name_en']} division")
@@ -751,11 +753,11 @@ class NLQEngine:
         
         sql = f"""
             SELECT p.person_id, p.full_name_gu AS name, p.rank_code AS rank,
-                   perf.awards_count, s.name_en AS station
+                   perf.awards_count, s.name_en AS station, r.rank_order
             FROM clean.person p
             {' '.join(joins)}
             WHERE {' AND '.join(where)}
-            ORDER BY perf.awards_count DESC, p.person_id
+            ORDER BY r.rank_order DESC, perf.awards_count DESC, p.person_id
             LIMIT 50
         """
         rows = query(sql, params)
@@ -766,20 +768,22 @@ class NLQEngine:
             rows=rows, sql_label="top_awards",
         )
 
-    def _q_vacancy(self, station, division=None):
-        if station:
+    def _q_vacancy(self, stations, division=None):
+        if stations:
+            station_ids = tuple(s["station_id"] for s in stations)
+            names_en = " or ".join(s["name_en"] for s in stations)
             sql = """
                 SELECT s.name_en AS station, c.rank_band,
                        c.approved_total, c.present_total, c.vacancy
                 FROM clean.station_capacity c
                 JOIN clean.dim_station s ON s.station_id = c.station_id
-                WHERE c.station_id = %s
-                ORDER BY c.rank_band
+                WHERE c.station_id IN %s
+                ORDER BY s.name_en, c.rank_band
             """
-            rows = query(sql, [station["station_id"]])
+            rows = query(sql, [station_ids])
             return NLQResult(
                 intent="station_vacancy",
-                interpretation=f"Approved vs present strength at {station['name_en']}",
+                interpretation=f"Approved vs present strength at {names_en}",
                 columns=["station", "rank_band", "approved_total", "present_total", "vacancy"],
                 rows=rows, sql_label="station_vacancy",
             )
@@ -814,3 +818,19 @@ def get_engine():
 
 def ask(question):
     return get_engine().interpret(question).to_dict()
+
+if __name__ == "__main__":
+    import sys
+    import json
+    
+    # Configure basic logging to see LLM loading errors if any
+    logging.basicConfig(level=logging.INFO)
+    
+    if len(sys.argv) > 1:
+        q = " ".join(sys.argv[1:])
+    else:
+        q = "Show all cyber officers in Ahmedabad"
+        
+    print(f"Question: {q}")
+    res = ask(q)
+    print(json.dumps(res, indent=2, default=str))

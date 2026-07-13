@@ -146,7 +146,7 @@ def load_people(cur, source_table, prefix, rank_band):
         pid = f"{prefix}-{r['id']}"
         honorific, clean_name = split_name(r.get("name"))
         dob = r.get("date_of_birth")
-        appt = r.get("appointment_date")  # officers only
+        appt = r.get("posting_date")  # officers only
         present_date = r.get("police_station_present_date")  # employees
         batch_raw = r.get("batch")
         
@@ -183,17 +183,30 @@ def load_people(cur, source_table, prefix, rank_band):
         if not r.get("police_station_branch_id"):
             flags.append("station")
 
-        # NOTE: source appointment_date/present_date is a data-entry timestamp,
-        # NOT the real joining date. The reliable seniority signal is `batch`
-        # (year joined). Derive service years from batch_year; flag if absent.
         batch_year = parse_year(batch_raw)
-        if batch_year:
-            yos = round(dt.date.today().year - batch_year +
-                        (dt.date.today().timetuple().tm_yday / 365.25), 2)
-        else:
-            yos = None
-            flags.append("service_years")
         appt_eff = appt or present_date
+        
+        yos = None
+        if appt_eff:
+            # Handle both datetime/date objects and strings
+            if isinstance(appt_eff, str):
+                try:
+                    # Strip time portion if present and parse
+                    d_str = appt_eff.split(' ')[0]
+                    d_obj = dt.datetime.strptime(d_str, "%Y-%m-%d").date()
+                except ValueError:
+                    d_obj = None
+            elif hasattr(appt_eff, 'date'):
+                d_obj = appt_eff.date()
+            else:
+                d_obj = appt_eff
+
+            if d_obj:
+                delta = dt.date.today() - d_obj
+                yos = round(delta.days / 365.25, 2)
+        
+        if yos is None:
+            flags.append("service_years")
         cur.execute("""
             INSERT INTO clean.person
               (person_id, source_table, source_id, display_id, rank_band, rank_code, rank_raw,

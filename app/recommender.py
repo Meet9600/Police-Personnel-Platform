@@ -138,20 +138,40 @@ def recommend_team(station_ids, division_ids, needed_specs, team_size, rank_mix=
     rank_mix = dict(rank_mix or {})
     chosen, chosen_ids = [], set()
 
-    def take(pool, needed_rank=None):
-        best, best_score, best_reasons = None, -1e9, None
-        for c in pool:
+    def take(candidates, needed_rank=None):
+        scored = []
+        for c in candidates:
             if c["person_id"] in chosen_ids:
                 continue
             if needed_rank and c["rank_code"] != needed_rank:
                 continue
-            s, reasons = score_candidate(c, needed_specs, needed_rank)
-            if s > best_score:
-                best, best_score, best_reasons = c, s, reasons
-        if best:
-            chosen_ids.add(best["person_id"])
-            chosen.append({"person": best, "score": best_score, "reasons": best_reasons})
-        return best is not None
+            s, reasons = score_candidate(c, needed_specs)
+            scored.append({"person": c, "score": s, "reasons": reasons})
+            
+        if not scored:
+            return False
+            
+        scored.sort(key=lambda x: -x["score"])
+        best = scored[0]
+        alts = []
+        for alt in scored[1:6]:
+            alts.append({
+                "person_id": alt["person"]["person_id"],
+                "name": alt["person"]["full_name_gu"],
+                "rank": alt["person"]["rank_code"],
+                "photo": alt["person"].get("photo"),
+                "score": alt["score"],
+                "why": "; ".join(alt["reasons"])
+            })
+            
+        chosen_ids.add(best["person"]["person_id"])
+        chosen.append({
+            "person": best["person"], 
+            "score": best["score"], 
+            "reasons": best["reasons"],
+            "alternatives": alts
+        })
+        return True
 
     # 1) Fill explicit rank slots first.
     unfilled_ranks = []
@@ -176,18 +196,38 @@ def recommend_team(station_ids, division_ids, needed_specs, team_size, rank_mix=
                          if c["person_id"] not in chosen_ids and (c["specs"] & uncovered)]
         target_pool = pool_with_gap if (uncovered and pool_with_gap) else candidates
         scoring_specs = uncovered if (uncovered and pool_with_gap) else needed_specs
-        best, best_score = None, -1e9
+        
+        scored = []
         for c in target_pool:
             if c["person_id"] in chosen_ids:
                 continue
             s, _ = score_candidate(c, scoring_specs)
-            if s > best_score:
-                best, best_score = c, s
-        if not best:
+            disp_score, disp_reasons = score_candidate(c, needed_specs)
+            scored.append({"person": c, "sort_score": s, "score": disp_score, "reasons": disp_reasons})
+            
+        if not scored:
             break
-        chosen_ids.add(best["person_id"])
-        disp_score, disp_reasons = score_candidate(best, needed_specs)
-        chosen.append({"person": best, "score": disp_score, "reasons": disp_reasons})
+            
+        scored.sort(key=lambda x: -x["sort_score"])
+        best = scored[0]
+        alts = []
+        for alt in scored[1:6]:
+            alts.append({
+                "person_id": alt["person"]["person_id"],
+                "name": alt["person"]["full_name_gu"],
+                "rank": alt["person"]["rank_code"],
+                "photo": alt["person"].get("photo"),
+                "score": alt["score"],
+                "why": "; ".join(alt["reasons"])
+            })
+            
+        chosen_ids.add(best["person"]["person_id"])
+        chosen.append({
+            "person": best["person"], 
+            "score": best["score"], 
+            "reasons": best["reasons"],
+            "alternatives": alts
+        })
 
     # 3) Team-level rationale: coverage of requested specializations.
     covered = set()
@@ -209,11 +249,12 @@ def recommend_team(station_ids, division_ids, needed_specs, team_size, rank_mix=
                     FROM clean.person p
                     JOIN clean.dim_station s ON s.station_id = p.current_station_id
                     JOIN clean.person_specialization ps ON ps.person_id = p.person_id
+                    LEFT JOIN clean.rank_ref r ON p.rank_code = r.rank_code
                     WHERE s.division_id IN (SELECT division_id FROM clean.dim_station WHERE station_id = ANY(%(st)s))
                       AND NOT (p.current_station_id = ANY(%(st)s))
                       AND ps.spec_code = ANY(%(specs)s)
                       AND p.is_active
-                    ORDER BY ps.spec_code, p.rank_code
+                    ORDER BY ps.spec_code, r.rank_order DESC
                     LIMIT 30
                 """, {"st": station_ids, "specs": list(missing)})
             else:
@@ -224,10 +265,11 @@ def recommend_team(station_ids, division_ids, needed_specs, team_size, rank_mix=
                     FROM clean.person p
                     JOIN clean.dim_station s ON s.station_id = p.current_station_id
                     JOIN clean.person_specialization ps ON ps.person_id = p.person_id
+                    LEFT JOIN clean.rank_ref r ON p.rank_code = r.rank_code
                     WHERE NOT (s.division_id = ANY(%(div)s))
                       AND ps.spec_code = ANY(%(specs)s)
                       AND p.is_active
-                    ORDER BY ps.spec_code, p.rank_code
+                    ORDER BY ps.spec_code, r.rank_order DESC
                     LIMIT 30
                 """, {"div": division_ids, "specs": list(missing)})
             for row in c2.fetchall():
@@ -247,6 +289,7 @@ def recommend_team(station_ids, division_ids, needed_specs, team_size, rank_mix=
                 "photo": m["person"]["photo"],
                 "score": m["score"],
                 "why": "; ".join(m["reasons"]),
+                "alternatives": m.get("alternatives", []),
             } for m in sorted(chosen, key=lambda x: (-x["person"]["rank_order"], -x["score"]))
         ],
         "team_rationale": {

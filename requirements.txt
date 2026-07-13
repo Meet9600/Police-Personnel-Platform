@@ -4,3 +4,5 @@ Flask-WTF>=1.2
 psycopg2-binary>=2.9
 Werkzeug>=3.0
 Babel>=2.12
+llama-cpp-python>=0.2.77
+huggingface-hub>=0.23.0

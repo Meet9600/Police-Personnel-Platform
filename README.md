@@ -6,13 +6,14 @@ This platform uses natural language processing and constraint-based algorithms t
 
 ## Key Features
 
-*   **Offline Search Engine**
-    *   Query the personnel database using conversational language (e.g., "Show me cyber specialists transferred from Bhavnagar").
-    *   Custom Python NLP heuristic engine with regex intent parsing, bilingual phonetic transliteration matching, and dynamic SQL generation.
-    *   No external LLMs or ML models are used, ensuring the system can run in air-gapped environments.
+*   **Smart Search Engine**
+    *   Query the personnel database using conversational language in English or Gujarati.
+    *   Powered by an integrated Local LLM that extracts intents and filters from natural language, routing them to dynamic SQL generators.
+    *   Features a cross-lingual anti-hallucination layer mapping LLM outputs strictly to validated database tokens and aliases.
 *   **Algorithmic Team Builder**
     *   Recommend teams for specific tasks based on rank constraints, specialized skills, and geographic availability.
     *   Analyzes personnel performance records, active disciplinary status, and current duty maps to generate recommendations.
+    *   Includes a Shuffle mechanism to instantly swap candidates with equally qualified alternatives on the dashboard.
 *   **Bilingual Localization**
     *   Support for English, Gujarati, and Gujlish text parsing to handle regional input variations.
 *   **A4 Reporting**

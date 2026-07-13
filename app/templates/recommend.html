@@ -174,28 +174,32 @@
               <div class="card border border-amber-200 shadow-md overflow-hidden break-inside-avoid mb-6">
                 <div class="bg-gradient-to-r from-amber-50 to-white border-b border-amber-100 px-5 py-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
                   <div class="flex items-center gap-4">
-                     {% if leader.photo %}
-                     <img src="{{ leader.photo }}" alt="Photo" class="w-14 h-14 rounded shadow-sm object-cover border border-amber-200 shrink-0">
-                     {% else %}
-                     <div class="w-14 h-14 rounded bg-amber-100 text-amber-800 flex items-center justify-center font-black text-xl border border-amber-200 shrink-0">
-                        {{ leader.rank }}
+                     <img src="{{ leader.photo or '' }}" alt="Photo" class="w-14 h-14 rounded shadow-sm object-cover border border-amber-200 shrink-0 photo-val {% if not leader.photo %}hidden{% endif %}">
+                     <div class="w-14 h-14 rounded bg-amber-100 text-amber-800 flex items-center justify-center font-black text-xl border border-amber-200 shrink-0 photo-fallback {% if leader.photo %}hidden{% endif %}">
+                        <span class="rank-val">{{ leader.rank }}</span>
                      </div>
-                     {% endif %}
                      <div>
                         <div class="flex items-center gap-2 mb-1">
                            <span class="bg-amber-500 text-white text-[10px] font-extrabold px-2 py-0.5 rounded shadow-sm uppercase tracking-wider">{{ _('Team Leader') }}</span>
-                           <span class="text-xs font-mono text-slate-500 font-medium">{{ leader.person_id }}</span>
+                           <span class="bg-amber-100 text-amber-800 text-[9px] font-extrabold px-1.5 py-0.5 rounded uppercase rank-val">{{ leader.rank }}</span>
+                           <span class="text-xs font-mono text-slate-500 font-medium buckle-val">{{ leader.person_id }}</span>
                         </div>
-                        <div class="font-extrabold text-slate-900 text-lg">{{ leader.name }}</div>
+                        <div class="font-extrabold text-slate-900 text-lg name-val">{{ leader.name }}</div>
                      </div>
                   </div>
-                  <div class="text-left sm:text-right bg-white sm:bg-transparent p-3 sm:p-0 rounded-lg sm:rounded-none border sm:border-0 border-amber-100">
+                  <div class="text-left sm:text-right bg-white sm:bg-transparent p-3 sm:p-0 rounded-lg sm:rounded-none border sm:border-0 border-amber-100 flex flex-col items-end">
                      <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">{{ _('AI Rating') }}</div>
-                     <div class="font-black text-amber-600 text-2xl">{{ leader.score }}</div>
+                     <div class="font-black text-amber-600 text-2xl mb-2 score-val">{{ leader.score }}</div>
+                     {% if leader.alternatives|length > 0 %}
+                     <button type="button" class="shuffle-btn text-amber-600 hover:text-amber-800 text-xs font-bold uppercase tracking-wider flex items-center gap-1 bg-amber-50 px-2 py-1 rounded" data-alts='{{ leader.alternatives|tojson|forceescape }}' data-current-idx="0">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                        {{ _('Shuffle') }}
+                     </button>
+                     {% endif %}
                   </div>
                 </div>
                 <div class="p-5 bg-white member-why">
-                  <p class="text-sm text-slate-700 leading-relaxed font-medium">{{ leader.why }}</p>
+                  <p class="text-sm text-slate-700 leading-relaxed font-medium why-val">{{ leader.why }}</p>
                 </div>
               </div>
 
@@ -207,28 +211,32 @@
                   <div class="pdf-col card border border-slate-200 shadow-sm hover:shadow-md transition-shadow overflow-hidden break-inside-avoid">
                     <div class="bg-slate-50 border-b border-slate-100 px-5 py-3.5 flex justify-between items-center gap-4">
                       <div class="flex items-center gap-3 min-w-0">
-                         {% if m.photo %}
-                         <img src="{{ m.photo }}" alt="Photo" class="w-11 h-11 rounded shadow-sm object-cover border border-blue-100 shrink-0">
-                         {% else %}
-                         <div class="w-11 h-11 rounded bg-blue-50 text-blue-700 flex items-center justify-center font-extrabold text-sm border border-blue-100 shrink-0">
-                            {{ m.rank }}
+                         <img src="{{ m.photo or '' }}" alt="Photo" class="w-11 h-11 rounded shadow-sm object-cover border border-blue-100 shrink-0 photo-val {% if not m.photo %}hidden{% endif %}">
+                         <div class="w-11 h-11 rounded bg-blue-50 text-blue-700 flex items-center justify-center font-extrabold text-sm border border-blue-100 shrink-0 photo-fallback {% if m.photo %}hidden{% endif %}">
+                            <span class="rank-val">{{ m.rank }}</span>
                          </div>
-                         {% endif %}
                          <div class="truncate">
                             <div class="flex items-center gap-2 mb-0.5">
                                <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{{ _('Member') }} #{{ loop.index }}</span>
-                               <span class="text-[10px] font-mono text-slate-400">{{ m.person_id }}</span>
+                               <span class="bg-blue-100 text-blue-800 text-[9px] font-extrabold px-1.5 py-0.5 rounded uppercase rank-val">{{ m.rank }}</span>
+                               <span class="text-[10px] font-mono text-slate-400 buckle-val">{{ m.person_id }}</span>
                             </div>
-                            <div class="font-bold text-slate-800 text-base truncate">{{ m.name }}</div>
+                            <div class="font-bold text-slate-800 text-base truncate name-val">{{ m.name }}</div>
                          </div>
                       </div>
-                      <div class="text-right shrink-0">
+                      <div class="text-right shrink-0 flex flex-col items-end">
                          <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">{{ _('Rating') }}</div>
-                         <div class="font-bold text-blue-600 text-lg">{{ m.score }}</div>
+                         <div class="font-bold text-blue-600 text-lg mb-2 score-val">{{ m.score }}</div>
+                         {% if m.alternatives|length > 0 %}
+                         <button type="button" class="shuffle-btn text-blue-600 hover:text-blue-800 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 bg-blue-50 px-1.5 py-0.5 rounded" data-alts='{{ m.alternatives|tojson|forceescape }}' data-current-idx="0">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                            {{ _('Shuffle') }}
+                         </button>
+                         {% endif %}
                       </div>
                     </div>
                     <div class="p-4 bg-white member-why">
-                      <p class="text-sm text-slate-600 leading-relaxed font-medium">{{ m.why }}</p>
+                      <p class="text-sm text-slate-600 leading-relaxed font-medium why-val">{{ m.why }}</p>
                     </div>
                   </div>
                   {% endfor %}
@@ -424,6 +432,48 @@
       var now = new Date();
       dateEl.textContent = now.toLocaleDateString() + ' ' + now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
     }
+
+    document.querySelectorAll('.shuffle-btn').forEach(function(btn) {
+      btn.addEventListener('click', function(e) {
+        var alts = JSON.parse(this.getAttribute('data-alts') || '[]');
+        if (alts.length === 0) return;
+        
+        var currentIdx = parseInt(this.getAttribute('data-current-idx')) || 0;
+        var nextIdx = (currentIdx + 1) % alts.length;
+        var alt = alts[nextIdx];
+        
+        this.setAttribute('data-current-idx', nextIdx);
+        
+        // Find closest card to update elements inside it
+        var card = this.closest('.card');
+        if (!card) return;
+        
+        var nameEl = card.querySelector('.name-val') || card.querySelector('.font-extrabold.text-slate-900.text-lg');
+        var buckleEl = card.querySelector('.buckle-val') || card.querySelector('.font-mono.text-slate-500.font-medium');
+        var rankEl = card.querySelector('.rank-val');
+        var photoVal = card.querySelector('.photo-val');
+        var photoFallback = card.querySelector('.photo-fallback');
+        var scoreEl = card.querySelector('.score-val');
+        var whyEl = card.querySelector('.why-val');
+        
+        if (nameEl) nameEl.textContent = alt.name;
+        if (buckleEl) buckleEl.textContent = alt.person_id;
+        if (rankEl) rankEl.textContent = alt.rank;
+        if (scoreEl) scoreEl.textContent = alt.score;
+        if (whyEl) whyEl.textContent = alt.why;
+        
+        if (alt.photo) {
+          if (photoVal) {
+             photoVal.src = alt.photo;
+             photoVal.classList.remove('hidden');
+          }
+          if (photoFallback) photoFallback.classList.add('hidden');
+        } else {
+          if (photoVal) photoVal.classList.add('hidden');
+          if (photoFallback) photoFallback.classList.remove('hidden');
+        }
+      });
+    });
 
     // Move the print report to be a direct child of body for clean print isolation
     var report = document.getElementById('formal-print-report');

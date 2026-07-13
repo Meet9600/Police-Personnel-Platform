@@ -93,8 +93,8 @@ msgid "Try:"
 msgstr "પ્રયાસ કરો:"
 
 #: app/templates/ask.html:31
-msgid "How many ASIs in Ahmedabad?"
-msgstr "અમદાવાદમાં કેટલા ASI છે?"
+msgid "How many ASIs in Ahmedabad Rural?"
+msgstr "અમદાવાદ ગ્રામ્યમાં કેટલા ASI છે?"
 
 #: app/templates/ask.html:32
 msgid "List cyber specialists"

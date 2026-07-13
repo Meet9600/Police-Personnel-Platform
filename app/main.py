@@ -390,5 +390,30 @@ def debug_counts():
         "duties": duty_count
     })
 
+@app.route("/debug_stations", methods=["GET"])
+def debug_stations():
+    stations = query("SELECT station_id, name_en, name_raw FROM clean.dim_station")
+    return jsonify([dict(s) for s in stations])
+
+@app.route("/debug_all_stations", methods=["GET"])
+def debug_all_stations():
+    stations = query("SELECT station_id, name_en, name_raw FROM clean.dim_station")
+    return jsonify([dict(s) for s in stations])
+
+@app.route("/debug_ask/<path:question>", methods=["GET"])
+def debug_ask(question):
+    try:
+        from nlp.nlq_engine import ask
+        res = ask(question)
+        return jsonify({
+            "intent": res.intent,
+            "interpretation": res.interpretation,
+            "sql_label": res.sql_label,
+            "message": res.message
+        })
+    except Exception as e:
+        import traceback
+        return jsonify({"error": str(e), "traceback": traceback.format_exc()})
+
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=5001, debug=os.environ.get("FLASK_DEBUG", "0") == "1")
